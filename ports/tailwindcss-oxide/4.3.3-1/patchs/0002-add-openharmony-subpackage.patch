@@ -1,0 +1,29 @@
+--- /dev/null
++++ b/crates/node/npm/openharmony-arm64/package.json
+@@ -0,0 +1,26 @@
++{
++  "name": "@ohos-ports/tailwindcss-oxide-openharmony-arm64",
++  "version": "4.3.3-1",
++  "repository": {
++    "type": "git",
++    "url": "git+https://github.com/ohos-ports/ohos-ports.git",
++    "directory": "ports/tailwindcss-oxide/4.3.3-1"
++  },
++  "os": [
++    "openharmony"
++  ],
++  "cpu": [
++    "arm64"
++  ],
++  "main": "tailwindcss-oxide.openharmony-arm64.node",
++  "files": [
++    "tailwindcss-oxide.openharmony-arm64.node"
++  ],
++  "publishConfig": {
++    "access": "public"
++  },
++  "license": "MIT",
++  "engines": {
++    "node": ">= 20"
++  }
++}
