@@ -1,0 +1,72 @@
+diff --git a/rust-pty/Cargo.toml b/rust-pty/Cargo.toml
+index 83e146f..3462189 100644
+--- a/rust-pty/Cargo.toml
++++ b/rust-pty/Cargo.toml
+@@ -15,7 +15,16 @@ crate-type = ["cdylib"]
+ 
+ [dependencies]
+ # https://github.com/wezterm/wezterm/issues/6783
+-portable-pty = { version = "0.8.1", features = ["serde_support"] }
++#
++# portable-pty 0.9.0 (crates.io) pins nix "0.28", which predates OHOS
++# support. nix 0.30+ added *-unknown-linux-ohos handling
++# (nix-rust/nix#2599/#2587/#2456). Cargo's [patch.crates-io] can't bump a
++# transitive dep to a different same-registry version ("patches must point
++# to different sources"), so — mirroring the same fix in the bun-pty
++# Homebrew formula (Formula/b/bun-pty.rb) — vendor/portable-pty-0.9.0/ is a
++# checked-in copy of the real crates.io 0.9.0 source with just its nix
++# requirement bumped from "0.28" to "0.31" in Cargo.toml.
++portable-pty = { path = "vendor/portable-pty-0.9.0", features = ["serde_support"] }
+ lazy_static = "1.4"
+ crossbeam = { version = "0.8.4", features = ["crossbeam-channel"] }
+ serde = { version = "1.0", features = ["derive"] }
+diff --git a/src/terminal.ts b/src/terminal.ts
+index e3b3dfc..233a4f7 100644
+--- a/src/terminal.ts
++++ b/src/terminal.ts
+@@ -43,6 +43,23 @@ function resolveLibPath(): string {
+ 
+ 	const musl = isMusl();
+ 
++	// For OpenHarmony (OHOS): dedicated embedded variant, its own branch since
++	// process.platform reports 'openharmony' (not 'linux') — Bun's static
++	// bundler only includes the require() for the literal platform string
++	// matched at compile time, so this must be a standalone check rather than
++	// folded into the musl branch below.
++	// @ts-ignore - "openharmony" is a real Bun-on-OHOS platform value, but
++	// @types/node's Platform union doesn't include it.
++	if (process.platform === "openharmony") {
++		try {
++			// @ts-ignore - require returns path for binary files in Bun
++			const embeddedOhosPath = require(`../rust-pty/target/release/${process.arch === "arm64" ? "librust_pty_arm64_ohos.so" : "librust_pty_ohos.so"}`);
++			if (embeddedOhosPath) return embeddedOhosPath;
++		} catch {
++			// Not running as compiled binary, fall through to dynamic resolution
++		}
++	}
++
+ 	// For bun compile: use statically analyzable require with inline ternary.
+ 	// Bun evaluates process.platform and process.arch at compile time and only
+ 	// bundles the file for the target platform. The ternary MUST be inline
+@@ -70,7 +87,9 @@ function resolveLibPath(): string {
+ 	}
+ 
+ 	// Fallback: dynamic resolution for development scenarios
+-	const platform = process.platform;
++	// Widened to string: @types/node's Platform union doesn't include
++	// "openharmony", which is a real Bun-on-OHOS value compared against below.
++	const platform: string = process.platform;
+ 	const arch = process.arch;
+ 
+ 	// Try both architecture-specific and generic filenames
+@@ -81,6 +100,10 @@ function resolveLibPath(): string {
+ 				: ["librust_pty.dylib"]
+ 			: platform === "win32"
+ 			? ["rust_pty.dll"]
++			: platform === "openharmony"
++			? arch === "arm64"
++				? ["librust_pty_arm64_ohos.so", "librust_pty_ohos.so"]
++				: ["librust_pty_ohos.so"]
+ 			: musl
+ 			? arch === "arm64"
+ 				? ["librust_pty_arm64_musl.so", "librust_pty_musl.so", "librust_pty_arm64.so", "librust_pty.so"]

@@ -1,0 +1,26 @@
+--- a/package.json
++++ b/package.json
+@@ -1,17 +1,18 @@
+ {
+-	"name": "bun-pty",
+-	"version": "0.4.10",
+-	"description": "Cross-platform pseudoterminal (PTY) implementation for Bun with native performance",
++	"name": "@ohos-ports/bun-pty",
++	"version": "0.4.10-1",
++	"description": "Cross-platform pseudoterminal (PTY) implementation for Bun with native performance — OpenHarmony (OHOS) port, republished from sursaone/bun-pty",
+ 	"main": "./src/index.ts",
+ 	"types": "./dist/index.d.ts",
+ 	"type": "module",
+ 	"repository": {
+ 		"type": "git",
+-		"url": "git+https://github.com/sursaone/bun-pty.git"
++		"url": "git+https://github.com/ohos-ports/ohos-ports.git",
++		"directory": "ports/bun-pty/0.4.10-1"
+ 	},
+ 	"homepage": "https://github.com/sursaone/bun-pty#readme",
+ 	"bugs": {
+-		"url": "https://github.com/sursaone/bun-pty/issues"
++		"url": "https://github.com/ohos-ports/ohos-ports/issues"
+ 	},
+ 	"author": {
+ 		"name": "Dilip Thapa",
