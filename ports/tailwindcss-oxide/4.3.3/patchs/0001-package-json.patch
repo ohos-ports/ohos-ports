@@ -11,7 +11,7 @@
 -    "url": "git+https://github.com/tailwindlabs/tailwindcss.git",
 -    "directory": "crates/node"
 +    "url": "git+https://github.com/ohos-ports/ohos-ports.git",
-+    "directory": "ports/tailwindcss-oxide/4.3.3-1"
++    "directory": "ports/tailwindcss-oxide/4.3.3"
    },
    "main": "index.js",
    "types": "index.d.ts",
