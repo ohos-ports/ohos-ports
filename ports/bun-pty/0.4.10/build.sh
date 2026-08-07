@@ -82,6 +82,28 @@ grep -q 'process.platform === "openharmony"' src/terminal.ts
 readelf -h rust-pty/target/release/librust_pty_arm64_ohos.so | grep -q 'AArch64'
 readelf -S rust-pty/target/release/librust_pty_arm64_ohos.so | grep -q '\.codesign'
 
+# The CI image doesn't ship bun (only node/python/devel-base, per
+# setup-tools.sh), but the functional test below needs it — bun-pty is a
+# bun-only package (bun:ffi), so this can't be swapped for a node check.
+# Pulling it from our own tap:
+#  - `brew tap`/`install` need an explicit HTTPS URL: this repo's git remotes
+#    are SSH-only, which an anonymous CI runner can't auth against, but the
+#    same repo is also a public, anonymously-clonable HTTPS remote.
+#  - harmonybrew refuses to load formulas from a tap it hasn't been told to
+#    trust yet (a third-party-tap safety gate, not standard Homebrew) — bun
+#    pulls in bun-bootstrap as a dependency, which trips this on first use.
+#  - some containers are missing the device-side OHOS ELF loader path
+#    (`/system/lib/ld-musl-aarch64.so.1`, only `/lib/...` exists), which
+#    breaks execution of any OHOS-native binary, bun's own post-install
+#    self-check included. The symlink is idempotent and harmless if the
+#    container already has it.
+mkdir -p /system/lib
+ln -sf /lib/ld-musl-aarch64.so.1 /system/lib/ld-musl-aarch64.so.1
+brew tap social4hyq/core https://github.com/social4hyq/homebrew-core.git
+brew trust social4hyq/core
+brew install -y social4hyq/core/bun
+bun --version
+
 # Real functional smoke test: this container IS the target platform, so
 # actually spawn a PTY through the compiled binding instead of only parsing
 # the ELF header.
