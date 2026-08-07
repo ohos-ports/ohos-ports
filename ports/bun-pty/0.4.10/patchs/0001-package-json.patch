@@ -15,7 +15,7 @@
  		"type": "git",
 -		"url": "git+https://github.com/sursaone/bun-pty.git"
 +		"url": "git+https://github.com/ohos-ports/ohos-ports.git",
-+		"directory": "ports/bun-pty/0.4.10-1"
++		"directory": "ports/bun-pty/0.4.10"
  	},
  	"homepage": "https://github.com/sursaone/bun-pty#readme",
  	"bugs": {
