@@ -18,7 +18,7 @@
 -    "url": "https://github.com/anomalyco/opentui",
 -    "directory": "packages/core"
 +    "url": "https://github.com/ohos-ports/ohos-ports",
-+    "directory": "ports/opentui-core/0.4.5-patch.2"
++    "directory": "ports/opentui-core/0.4.5"
    },
    "exports": {
      ".": {
