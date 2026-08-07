@@ -18,7 +18,7 @@
      "type": "git",
 -    "url": "https://github.com/parcel-bundler/lightningcss.git"
 +    "url": "https://github.com/ohos-ports/ohos-ports.git",
-+    "directory": "ports/lightningcss/1.33.0-1"
++    "directory": "ports/lightningcss/1.33.0"
 +  },
 +  "optionalDependencies": {
 +    "lightningcss-darwin-x64": "1.33.0",
