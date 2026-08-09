@@ -1,0 +1,24 @@
+--- a/js-binding.js
++++ b/js-binding.js
+@@ -148,6 +148,21 @@
+         throw new Error(`Unsupported architecture on macOS: ${arch}`)
+     }
+     break
++  case 'openharmony':
++    switch (arch) {
++      case 'arm64':
++        // Bundled directly in this package (single-package OHOS port,
++        // no separate @ohos-ports/resvg-js-linux-arm64-ohos platform package).
++        try {
++          nativeBinding = require('./resvgjs.linux-arm64-ohos.node')
++        } catch (e) {
++          loadError = e
++        }
++        break
++      default:
++        throw new Error(`Unsupported architecture on OpenHarmony: ${arch}`)
++    }
++    break
+   case 'freebsd':
+     if (arch !== 'x64') {
+       throw new Error(`Unsupported architecture on FreeBSD: ${arch}`)

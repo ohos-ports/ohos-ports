@@ -1,0 +1,44 @@
+--- a/package.json
++++ b/package.json
+@@ -1,9 +1,13 @@
+ {
+-  "name": "@resvg/resvg-js",
++  "name": "@ohos-ports/resvg-js",
+   "version": "2.6.2",
+-  "description": "A high-performance SVG renderer and toolkit, powered by Rust based resvg and napi-rs",
++  "description": "A high-performance SVG renderer and toolkit, powered by Rust based resvg and napi-rs — OpenHarmony (OHOS) port.",
+   "main": "index.js",
+-  "repository": "git@github.com:yisibl/resvg-js.git",
++  "repository": {
++    "type": "git",
++    "url": "https://github.com/ohos-ports/ohos-ports.git",
++    "directory": "ports/resvg-js/2.6.2"
++  },
+   "license": "MPL-2.0",
+   "keywords": [
+     "resvg",
+@@ -20,8 +24,23 @@
+     "index.d.ts",
+     "index.js",
+     "js-binding.js",
+-    "js-binding.d.ts"
++    "js-binding.d.ts",
++    "resvgjs.linux-arm64-ohos.node"
+   ],
++  "optionalDependencies": {
++    "@resvg/resvg-js-win32-x64-msvc": "2.6.2",
++    "@resvg/resvg-js-darwin-x64": "2.6.2",
++    "@resvg/resvg-js-linux-x64-gnu": "2.6.2",
++    "@resvg/resvg-js-linux-x64-musl": "2.6.2",
++    "@resvg/resvg-js-linux-arm64-gnu": "2.6.2",
++    "@resvg/resvg-js-win32-ia32-msvc": "2.6.2",
++    "@resvg/resvg-js-linux-arm-gnueabihf": "2.6.2",
++    "@resvg/resvg-js-darwin-arm64": "2.6.2",
++    "@resvg/resvg-js-android-arm64": "2.6.2",
++    "@resvg/resvg-js-android-arm-eabi": "2.6.2",
++    "@resvg/resvg-js-linux-arm64-musl": "2.6.2",
++    "@resvg/resvg-js-win32-arm64-msvc": "2.6.2"
++  },
+   "napi": {
+     "name": "resvgjs",
+     "triples": {
