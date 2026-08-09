@@ -14,7 +14,7 @@ set -e
 VERSION=2.6.2
 PKG=resvg-js
 
-curl -fsSL "https://github.com/yisibl/resvg-js/archive/refs/tags/v${VERSION}.tar.gz" -o resvg-js.tar.gz
+curl -fsSL "https://github.com/thx/resvg-js/archive/refs/tags/v${VERSION}.tar.gz" -o resvg-js.tar.gz
 tar -zxf resvg-js.tar.gz
 rm resvg-js.tar.gz
 # GitHub source archives extract to <repo>-<version>/, which equals
@@ -78,9 +78,15 @@ node -e '
 
   const resvg = new Resvg(svg);
   const bbox = resvg.innerBBox();
-  console.log("innerBBox():", JSON.stringify(bbox));
-  if (!bbox || bbox.width <= 0 || bbox.height <= 0) {
+  // BBox fields are non-enumerable prototype getters (napi-rs class), so
+  // JSON.stringify/Object.keys show `{}` even on a real result — read the
+  // named fields directly instead.
+  console.log("innerBBox():", bbox && { x: bbox.x, y: bbox.y, width: bbox.width, height: bbox.height });
+  if (!bbox || typeof bbox.width !== "number" || bbox.width <= 0 || bbox.height <= 0) {
     throw new Error("unexpected bbox result");
+  }
+  if (bbox.x !== 10 || bbox.y !== 10 || bbox.width !== 30 || bbox.height !== 20) {
+    throw new Error(`bbox does not match input rect: ${JSON.stringify({ x: bbox.x, y: bbox.y, width: bbox.width, height: bbox.height })}`);
   }
 
   const rendered = resvg.render();
