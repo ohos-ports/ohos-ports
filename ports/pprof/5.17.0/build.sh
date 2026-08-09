@@ -76,7 +76,7 @@ rm -rf build
 # --- verify package contents ---
 
 NAME=$(node -e "console.log(require('./package.json').name)")
-[ "$NAME" = "@ohos-ports/pprof" ]
+[ "$NAME" = "@ohos-ports/datadog-pprof" ]
 
 [ -z "$(node -e "console.log(require('./package.json').postinstall || '')")" ]
 
