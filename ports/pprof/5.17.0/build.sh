@@ -27,13 +27,21 @@ export PATH="$(pwd)/node_modules/.bin:$PATH"
 npm run compile
 
 # node-gyp's generated Makefile falls back to a bare `clang++`/`clang` when
-# CC/CXX aren't set in the environment. On this container that bare name
-# resolves to the OHOS device's own bundled toolchain
-# (/data/service/hnp/bin/clang++, clang 15.0.4), not harmonybrew's llvm@21 —
-# and that older toolchain's libcxx-ohos headers don't have <source_location>,
-# which node's own v8 headers pull in unconditionally, so the build fails
-# before it ever reaches this package's own source. Point CC/CXX at
-# harmonybrew's cc/c++ (llvm@21) explicitly to fix the header search path.
+# CC/CXX aren't set in the environment. That bare name resolves through
+# llvm-gcc-compat's cc/c++ wrapper (a devel-base dependency, so always
+# present) — but that wrapper only points at harmonybrew's llvm@21 clang
+# *after* llvm@21's own post_install hook has patched it to do so. Without
+# llvm@21 actually installed, the wrapper falls back to the OHOS device's
+# older bundled toolchain (clang 15.0.4), whose libcxx-ohos headers don't
+# have <source_location> — which node's own v8 headers pull in
+# unconditionally, so the build fails before it ever reaches this package's
+# own source. setup-tools.sh only installs devel-base, not llvm@21 itself,
+# so install it explicitly (same tap+trust dance bun-pty's build.sh uses for
+# its own bun dependency — this tap isn't pre-trusted on a fresh runner).
+brew tap social4hyq/core https://github.com/social4hyq/homebrew-core.git
+brew trust social4hyq/core
+brew install -y social4hyq/core/llvm@21
+
 export CC=cc CXX=c++
 node-gyp rebuild --jobs=max
 
@@ -94,21 +102,22 @@ esac
 # Real functional smoke test: dlopen'ing this addon and calling its actual
 # V8 CPU-profiler API (not just parsing the ELF header). This can't be done
 # with plain `node` on this device: the addon directly calls host-exported
-# v8:: symbols whose mangled names embed a libc++ ABI namespace tag
-# (std::__n1::optional<...> vs std::__h::optional<...>), and harmonybrew's
-# `node` formula and bun currently carry different tags — see
-# docs/harmony-ohos-porting-guide.md §2.8 in the Workspace repo for the full
-# investigation. Bun (r56+) is `__n1`, matching this build, and is also the
-# actual runtime bun's own upstream acceptance test
+# v8:: symbols, and their mangled names embed the calling convention of
+# whatever C++ standard library built the caller. This build links against
+# llvm@21's libc++ (std::__n1::optional<...>). harmonybrew's `node` formula
+# is a different, unrelated case: its own formula builds Node.js/V8 with
+# Alpine Linux's native GCC in a chroot, statically linking GNU libstdc++
+# (plain std::optional<...>, no inline-namespace tag at all) — not a libc++
+# variant, so no ABI-namespace flag on either side could bridge it. bun
+# (r56+) links libc++ with the same __n1 tag as this build, and is also the
+# actual runtime upstream's own acceptance test
 # (test/integration/datadog-pprof/datadog-pprof.test.ts) uses, so that's
 # what we verify against here.
 #
 # The CI image doesn't ship bun (only node/python/devel-base, per
-# setup-tools.sh) — pulling it from our own tap, same recipe as bun-pty:
+# setup-tools.sh) — pulling it from our own tap (already trusted above):
 mkdir -p /system/lib
 ln -sf /lib/ld-musl-aarch64.so.1 /system/lib/ld-musl-aarch64.so.1
-brew tap social4hyq/core https://github.com/social4hyq/homebrew-core.git
-brew trust social4hyq/core
 brew install -y social4hyq/core/bun
 bun --version
 
