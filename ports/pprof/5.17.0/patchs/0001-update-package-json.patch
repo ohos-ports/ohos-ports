@@ -1,0 +1,26 @@
+--- a/package.json
++++ b/package.json
+@@ -1,10 +1,11 @@
+ {
+-  "name": "@datadog/pprof",
++  "name": "@ohos-ports/pprof",
+   "version": "5.17.0",
+-  "description": "pprof support for Node.js",
++  "description": "pprof support for Node.js — OpenHarmony (OHOS) port, adding an openharmony-arm64 node-gyp-build prebuild alongside upstream's existing platforms.",
+   "repository": {
+     "type": "git",
+-    "url": "git+https://github.com/DataDog/pprof-nodejs.git"
++    "url": "https://github.com/ohos-ports/ohos-ports.git",
++    "directory": "ports/pprof/5.17.0"
+   },
+   "main": "out/src/index.js",
+   "types": "out/src/index.d.ts",
+@@ -84,8 +85,6 @@
+   "engines": {
+     "node": ">=16"
+   },
+-  "//": "Temporary fix to make nan@2.22.2 work with Node 24",
+-  "postinstall": "sed -i '' 's/^.* Holder() const.*//' ./node_modules/nan/nan_callbacks_12_inl.h",
+   "overrides": {
+     "nyc": {
+       "brace-expansion": "^5.0.6",
