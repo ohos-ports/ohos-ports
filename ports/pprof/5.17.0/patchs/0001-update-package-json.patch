@@ -3,7 +3,7 @@
 @@ -1,10 +1,11 @@
  {
 -  "name": "@datadog/pprof",
-+  "name": "@ohos-ports/pprof",
++  "name": "@ohos-ports/datadog-pprof",
    "version": "5.17.0",
 -  "description": "pprof support for Node.js",
 +  "description": "pprof support for Node.js — OpenHarmony (OHOS) port, adding an openharmony-arm64 node-gyp-build prebuild alongside upstream's existing platforms.",
