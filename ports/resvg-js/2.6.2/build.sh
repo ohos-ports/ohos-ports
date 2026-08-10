@@ -45,7 +45,7 @@ chmod +x resvgjs.linux-arm64-ohos.node
 # --- verify package contents ---
 
 NAME=$(node -e "console.log(require('./package.json').name)")
-[ "$NAME" = "@ohos-ports/resvg-resvg-js" ]
+[ "$NAME" = "@ohos-ports/resvg-js" ]
 
 node --check js-binding.js
 grep -q "case 'openharmony':" js-binding.js

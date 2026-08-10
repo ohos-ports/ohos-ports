@@ -3,7 +3,7 @@
 @@ -1,9 +1,13 @@
  {
 -  "name": "@resvg/resvg-js",
-+  "name": "@ohos-ports/resvg-resvg-js",
++  "name": "@ohos-ports/resvg-js",
    "version": "2.6.2",
 -  "description": "A high-performance SVG renderer and toolkit, powered by Rust based resvg and napi-rs",
 +  "description": "A high-performance SVG renderer and toolkit, powered by Rust based resvg and napi-rs — OpenHarmony (OHOS) port.",
