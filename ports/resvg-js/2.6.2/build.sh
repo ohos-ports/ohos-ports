@@ -53,14 +53,15 @@ grep -q "case 'openharmony':" js-binding.js
 readelf -h resvgjs.linux-arm64-ohos.node | grep -q 'AArch64'
 readelf -S resvgjs.linux-arm64-ohos.node | grep -q '\.codesign'
 
-# optionalDependencies must track the upstream base version — this package's
-# own version is a direct alias of the upstream release (no -N revision
-# suffix on first publish), so every @resvg/resvg-js-* entry should equal it.
+# optionalDependencies must track the upstream base version (this package's
+# own version carries a -N revision suffix that doesn't correspond to a new
+# upstream release), so every @resvg/resvg-js-* entry should equal the base.
 node -e '
   const pkg = require("./package.json");
+  const base = pkg.version.replace(/-.*$/, "");
   for (const [name, range] of Object.entries(pkg.optionalDependencies ?? {})) {
-    if (name.startsWith("@resvg/resvg-js-") && range !== pkg.version) {
-      console.error(`optionalDependencies["${name}"] = ${range}, expected ${pkg.version}`);
+    if (name.startsWith("@resvg/resvg-js-") && range !== base) {
+      console.error(`optionalDependencies["${name}"] = ${range}, expected ${base}`);
       process.exit(1);
     }
   }
