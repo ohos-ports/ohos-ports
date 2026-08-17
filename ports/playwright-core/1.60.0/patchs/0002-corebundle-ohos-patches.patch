@@ -1,0 +1,504 @@
+--- a/lib/coreBundle.js
++++ b/lib/coreBundle.js
+@@ -19971,6 +19971,37 @@ var init_page = __esm({
+       }
+       async goBack(progress2, options2) {
+         return this.mainFrame().raceNavigationAction(progress2, async () => {
++          /* @playwright-ohos-patched: patch-1h-go-back */
++          if (this.browserContext._browser._hdcBackend) {
++            const url = await progress2.race(this.delegate.goBack());
++            if (!url) {
++              return null;
++            }
++            return {
++              guid: "ohos-history-response-" + Date.now() + "-" + Math.random(),
++              url: () => url,
++              status: () => 200,
++              statusText: () => "",
++              headers: () => [],
++              timing: () => ({ startTime: 0, domainLookupStart: -1, domainLookupEnd: -1, connectStart: -1, secureConnectionStart: -1, connectEnd: -1, requestStart: 0, responseStart: 0 }),
++              fromServiceWorker: () => false,
++              request: () => ({
++                guid: "ohos-history-request-" + Date.now() + "-" + Math.random(),
++                url: () => url,
++                method: () => "GET",
++                postDataBuffer: () => null,
++                headers: () => [],
++                resourceType: () => "document",
++                isNavigationRequest: () => true,
++                _existingResponse: () => null,
++                redirectedFrom: () => null,
++                serviceWorker: () => null,
++                frame: () => this.mainFrame(),
++                timing: () => ({ startTime: 0, domainLookupStart: -1, domainLookupEnd: -1, connectStart: -1, secureConnectionStart: -1, connectEnd: -1, requestStart: 0, responseStart: 0 }),
++                sizes: () => ({ requestBodySize: 0, responseBodySize: 0, transferSize: 0 })
++              })
++            };
++          }
+           let error;
+           const waitPromise = this.mainFrame().waitForNavigation(progress2, false, options2).catch((e) => {
+             error = e;
+@@ -19990,6 +20021,37 @@ var init_page = __esm({
+       }
+       async goForward(progress2, options2) {
+         return this.mainFrame().raceNavigationAction(progress2, async () => {
++          /* @playwright-ohos-patched: patch-1h-go-forward */
++          if (this.browserContext._browser._hdcBackend) {
++            const url = await progress2.race(this.delegate.goForward());
++            if (!url) {
++              return null;
++            }
++            return {
++              guid: "ohos-history-response-" + Date.now() + "-" + Math.random(),
++              url: () => url,
++              status: () => 200,
++              statusText: () => "",
++              headers: () => [],
++              timing: () => ({ startTime: 0, domainLookupStart: -1, domainLookupEnd: -1, connectStart: -1, secureConnectionStart: -1, connectEnd: -1, requestStart: 0, responseStart: 0 }),
++              fromServiceWorker: () => false,
++              request: () => ({
++                guid: "ohos-history-request-" + Date.now() + "-" + Math.random(),
++                url: () => url,
++                method: () => "GET",
++                postDataBuffer: () => null,
++                headers: () => [],
++                resourceType: () => "document",
++                isNavigationRequest: () => true,
++                _existingResponse: () => null,
++                redirectedFrom: () => null,
++                serviceWorker: () => null,
++                frame: () => this.mainFrame(),
++                timing: () => ({ startTime: 0, domainLookupStart: -1, domainLookupEnd: -1, connectStart: -1, secureConnectionStart: -1, connectEnd: -1, requestStart: 0, responseStart: 0 }),
++                sizes: () => ({ requestBodySize: 0, responseBodySize: 0, transferSize: 0 })
++              })
++            };
++          }
+           let error;
+           const waitPromise = this.mainFrame().waitForNavigation(progress2, false, options2).catch((e) => {
+             error = e;
+@@ -20344,7 +20406,15 @@ var init_page = __esm({
+         const bindings = [...this.browserContext._pageBindings.values(), ...this._pageBindings.values()].map((binding) => binding.initScript);
+         if (this.browserContext.bindingsInitScript)
+           bindings.unshift(this.browserContext.bindingsInitScript);
+-        return [...bindings, ...this.browserContext.initScripts, ...this.initScripts];
++        {
++          /* @playwright-ohos-patched: patch-init-script */
++          const scripts = [...bindings, ...this.browserContext.initScripts, ...this.initScripts];
++          if (this.browserContext._browser._hdcBackend) {
++            const { ohosInitScript } = require("./ohos-launcher.cjs");
++            scripts.push({ source: ohosInitScript });
++          }
++          return scripts;
++        }
+       }
+       getBinding(name) {
+         return this._pageBindings.get(name) || this.browserContext._pageBindings.get(name);
+@@ -21770,6 +21840,12 @@ var init_validator = __esm({
+       name: tString
+     });
+     scheme.BrowserTypeLaunchParams = tObject({
++      /* @playwright-ohos-patched: patch-1g-launch-schema */
++      harmonyBundleName: tOptional(tString),
++      harmonyDebugPort: tOptional(tFloat),
++      harmonyAbility: tOptional(tString),
++      harmonyLaunchUrl: tOptional(tString),
++      harmonyArgs: tOptional(tArray(tString)),
+       channel: tOptional(tString),
+       executablePath: tOptional(tString),
+       args: tOptional(tArray(tString)),
+@@ -28745,6 +28821,10 @@ var init_registry = __esm({
+     defaultCacheDirectory = (() => {
+       if (process.platform === "linux")
+         return process.env.XDG_CACHE_HOME || import_path19.default.join(import_os8.default.homedir(), ".cache");
++      /* @playwright-ohos-patched: patch-0-cache-dir */
++      if (process.platform === "openharmony") {
++        return process.env.XDG_CACHE_HOME || import_path19.default.join(import_os8.default.homedir(), ".cache");
++      }
+       if (process.platform === "darwin")
+         return import_path19.default.join(import_os8.default.homedir(), "Library", "Caches");
+       if (process.platform === "win32")
+@@ -29058,7 +29138,34 @@ ${wrapInASCIIBox(prettyMessage, 1)}`);
+           }
+         });
+         const ffmpeg = descriptors.find((d) => d.name === "ffmpeg");
+-        const ffmpegExecutable = findExecutablePath(ffmpeg.dir, "ffmpeg");
++        const ffmpegExecutable = process.platform === "openharmony" ? (() => {
++        /* @playwright-ohos-patched: patch-0-ffmpeg */
++        const candidates = [];
++        try {
++          const { execFileSync } = require("child_process");
++          const out = execFileSync("sh", ["-c", "command -v ffmpeg 2>/dev/null || true"], { encoding: "utf8", timeout: 8000 }).trim();
++          const first = out.split("\n")[0].trim();
++          if (first) {
++            candidates.push(first);
++          }
++        } catch {
++        }
++        try {
++          const { homedir } = require("os");
++          const { join } = require("path");
++          candidates.push(join(homedir(), ".harmonybrew", "bin", "ffmpeg"));
++        } catch {
++        }
++        for (const candidate of candidates) {
++          try {
++            if (require("fs").existsSync(candidate)) {
++              return candidate;
++            }
++          } catch {
++          }
++        }
++        return void 0;
++      })() : findExecutablePath(ffmpeg.dir, "ffmpeg");
+         this._executables.push({
+           name: "ffmpeg",
+           browserName: void 0,
+@@ -35971,6 +36078,20 @@ var init_crPage = __esm({
+         if (!entry)
+           return false;
+         await this._mainFrameSession._client.send("Page.navigateToHistoryEntry", { entryId: entry.id });
++        /* @playwright-ohos-patched: patch-1h-history-navigation */
++        if (this._page.browserContext._browser._hdcBackend) {
++          const deadline = Date.now() + 30000;
++          while (Date.now() < deadline) {
++            await new Promise((resolve) => setTimeout(resolve, 200));
++            const { result } = await this._mainFrameSession._client.send("Runtime.evaluate", {
++              expression: "location.href",
++              returnByValue: true
++            });
++            if (result?.value === entry.url)
++              break;
++          }
++          return entry.url;
++        }
+         return true;
+       }
+       goBack() {
+@@ -36017,8 +36138,18 @@ var init_crPage = __esm({
+           const deviceScaleFactor = this._mainFrameSession._metricsOverride?.deviceScaleFactor || contentSize.width / cssContentSize.width || 1;
+           clip.scale /= deviceScaleFactor;
+         }
+-        const result2 = await progress2.race(this._mainFrameSession._client.send("Page.captureScreenshot", { format: format2, quality, clip, captureBeyondViewport: !fitsViewport }));
+-        return Buffer.from(result2.data, "base64");
++        try {
++          const result2 = await progress2.race(this._mainFrameSession._client.send("Page.captureScreenshot", { format: format2, quality, clip, captureBeyondViewport: !fitsViewport }));
++          return Buffer.from(result2.data, "base64");
++        } catch (error) {
++          /* @playwright-ohos-patched: patch-3b-screenshot-fallback */
++          const hdcBackend = this._browserContext._browser._hdcBackend;
++          if (!hdcBackend || format2 !== "png") {
++            throw error;
++          }
++          const { hdcScreenshot } = require("./ohos-launcher.cjs");
++          return await hdcScreenshot(hdcBackend);
++        }
+       }
+       async getContentFrame(handle) {
+         return this._sessionForHandle(handle)._getContentFrame(handle);
+@@ -36516,11 +36647,12 @@ var init_crPage = __esm({
+       }
+       _onScreencastFrame(payload) {
+         const buffer = Buffer.from(payload.data, "base64");
++        /* @playwright-ohos-patched: patch-8b-screencast-viewport */
+         this._page.screencast.onScreencastFrame({
+-          buffer,
++          buffer: buffer,
+           frameSwapWallTime: payload.metadata.timestamp ? payload.metadata.timestamp * 1e3 : Date.now(),
+-          viewportWidth: payload.metadata.deviceWidth,
+-          viewportHeight: payload.metadata.deviceHeight
++          viewportWidth: this._page.browserContext._browser._hdcBackend ? (this._metricsOverride?.width ?? Math.round(payload.metadata.deviceWidth)) : payload.metadata.deviceWidth,
++          viewportHeight: this._page.browserContext._browser._hdcBackend ? (this._metricsOverride?.height ?? Math.round(payload.metadata.deviceHeight)) : payload.metadata.deviceHeight
+         }, () => {
+           this._client._sendMayFail("Page.screencastFrameAck", { sessionId: payload.sessionId });
+         });
+@@ -36680,8 +36812,18 @@ var init_crPage = __esm({
+         const width = Math.max(quad[0], quad[2], quad[4], quad[6]) - x;
+         const height = Math.max(quad[1], quad[3], quad[5], quad[7]) - y;
+         const position = await this._framePosition();
+-        if (!position)
++        if (!position) {
+           return null;
++        }
++        /* @playwright-ohos-patched: patch-8-bounding-box */
++        if (this._page.browserContext._browser._hdcBackend) {
++          return {
++            x: Math.round(x + position.x),
++            y: Math.round(y + position.y),
++            width: Math.round(width),
++            height: Math.round(height)
++          };
++        }
+         return { x: x + position.x, y: y + position.y, width, height };
+       }
+       async _framePosition() {
+@@ -36899,6 +37041,14 @@ var init_crBrowser = __esm({
+         const connection = new CRConnection(parent, transport, options2.protocolLogger, options2.browserLogsCollector);
+         const browser = new _CRBrowser(parent, connection, options2);
+         browser._devtools = devtools;
++        /* @playwright-ohos-patched: patch-1c-connect-flags */
++        browser._hdcBackend = options2.__ohosHdcBackend || void 0;
++        browser._isArkWeb = !!options2.__ohosArkWeb;
++        if (browser._hdcBackend) {
++          browser._isCollocatedWithServer = false;
++          browser._isBrowserCollocatedWithServer = false;
++        }
++
+         if (browser.isClank())
+           browser._isCollocatedWithServer = false;
+         const session2 = connection.rootSession;
+@@ -36928,6 +37078,35 @@ var init_crBrowser = __esm({
+         return browser;
+       }
+       async doCreateNewContext(options2) {
++        /* @playwright-ohos-patched: patch-5-reuse-context */
++        if (this._isArkWeb && this._defaultContext) {
++          // The reused context would drop the requested emulation options;
++          // apply them so pages behave like on desktop chromium (the last
++          // requested context wins).
++          if (options2.viewport) {
++            this._defaultContext._options.viewport = options2.viewport;
++            this._defaultContext._options.screen = options2.screen || options2.viewport;
++            this._defaultContext._options.deviceScaleFactor = options2.deviceScaleFactor || this._defaultContext._options.deviceScaleFactor || 1;
++          }
++          if (options2.hasTouch !== undefined) {
++            this._defaultContext._options.hasTouch = options2.hasTouch;
++          }
++          if (options2.isMobile !== undefined) {
++            this._defaultContext._options.isMobile = options2.isMobile;
++          }
++          for (const crPage of this._defaultContext._crPages()) {
++            if (options2.viewport) {
++              crPage._page._setEmulatedSize({ viewport: options2.viewport, screen: options2.screen || options2.viewport });
++              await crPage.updateEmulatedViewportSize();
++            }
++            // Touch emulation only takes effect before the page navigates,
++            // so it must be pushed here at context creation time.
++            if (options2.hasTouch !== undefined) {
++              await crPage._mainFrameSession._client.send("Emulation.setTouchEmulationEnabled", { enabled: !!options2.hasTouch });
++            }
++          }
++          return this._defaultContext;
++        }
+         const proxy = options2.proxyOverride || options2.proxy;
+         let proxyBypassList = void 0;
+         if (proxy) {
+@@ -36975,7 +37154,9 @@ var init_crBrowser = __esm({
+         if (targetInfo.type === "browser")
+           return;
+         const session2 = this._session.createChildSession(sessionId);
+-        assert(targetInfo.browserContextId, "targetInfo: " + JSON.stringify(targetInfo, null, 2));
++        if (!this._isArkWeb) {
++          assert(targetInfo.browserContextId, "targetInfo: " + JSON.stringify(targetInfo, null, 2));
++        } /* @playwright-ohos-patched: patch-2a-context-assert */
+         let context2 = this._contexts.get(targetInfo.browserContextId) || null;
+         if (!context2) {
+           context2 = this._defaultContext;
+@@ -36984,7 +37165,7 @@ var init_crBrowser = __esm({
+           this._devtools.install(session2);
+           return;
+         }
+-        const treatOtherAsPage = targetInfo.type === "other" && process.env.PW_CHROMIUM_ATTACH_TO_OTHER;
++        const treatOtherAsPage = targetInfo.type === "other" && (process.env.PW_CHROMIUM_ATTACH_TO_OTHER || this._isArkWeb); /* @playwright-ohos-patched: patch-2-other-targets */
+         if (!context2 || targetInfo.type === "other" && !treatOtherAsPage) {
+           session2.detach().catch(() => {
+           });
+@@ -36996,6 +37177,12 @@ var init_crBrowser = __esm({
+           const opener = targetInfo.openerId ? this._crPages.get(targetInfo.openerId) || null : null;
+           const crPage = new CRPage(session2, targetInfo.targetId, context2, opener, { hasUIWindow: targetInfo.type === "page" });
+           this._crPages.set(targetInfo.targetId, crPage);
++        /* @playwright-ohos-patched: patch-2b-history-reset */
++        if (this._isArkWeb) {
++          crPage._page.waitForInitializedOrError().then(async () => {
++            await crPage._mainFrameSession._client.send("Page.resetNavigationHistory").catch(() => {});
++          }).catch(() => {});
++        }
+           return;
+         }
+         if (targetInfo.type === "service_worker") {
+@@ -37059,6 +37246,11 @@ var init_crBrowser = __esm({
+           this.downloadFinished(payload.guid, this._closeReason || "canceled");
+       }
+       async _closePage(crPage) {
++        /* @playwright-ohos-patched: patch-6b-close-page */
++        if (this._isArkWeb) {
++          await crPage._mainFrameSession._client.send("Page.navigate", { url: "about:blank" }).catch(() => {});
++          return;
++        }
+         await this._session.send("Target.closeTarget", { targetId: crPage._targetId });
+       }
+       async newBrowserCDPSession() {
+@@ -37146,6 +37338,14 @@ var init_crBrowser = __esm({
+         return this._crPages().map((crPage) => crPage._page);
+       }
+       async doCreateNewPage() {
++        /* @playwright-ohos-patched: patch-6-reuse-page */
++        if (this._browser._isArkWeb) {
++          for (const crPage of this._browser._crPages.values()) {
++            if (crPage._browserContext === this && crPage._page._closedState === "open") {
++              return crPage._page;
++            }
++          }
++        }
+         const { targetId } = await this._browser._session.send("Target.createTarget", { url: "about:blank", browserContextId: this._browserContextId });
+         return this._browser._crPages.get(targetId)._page;
+       }
+@@ -37297,6 +37497,32 @@ var init_crBrowser = __esm({
+       }
+       async doClose(reason) {
+         await this.dialogManager.closeBeforeUnloadDialogs();
++        /* @playwright-ohos-patched: patch-7-context-close */
++        if (this._browser._isArkWeb) {
++          for (const binding of this._pageBindings.values()) {
++            await binding.dispose().catch(() => {});
++          }
++          const pages = [...this._crPages()];
++          for (const crPage of pages) {
++            await this._browser._closePage(crPage).catch(() => {});
++          }
++          for (const [targetId, serviceWorker] of this._browser._serviceWorkers) {
++            if (serviceWorker.browserContext !== this) {
++              continue;
++            }
++            serviceWorker.didClose();
++            this._browser._serviceWorkers.delete(targetId);
++          }
++          try {
++            await this._browser._session.send("Storage.clearDataForOrigin", { origin: "*", storageTypes: "all" });
++          } catch {
++          }
++          try {
++            await this._browser._session.send("Browser.resetPermissions", { browserContextId: this._browserContextId });
++          } catch {
++          }
++          return;
++        }
+         if (!this._browserContextId) {
+           return "close-browser";
+         }
+@@ -41408,13 +41634,24 @@ var init_chromium = __esm({
+           this._devtools = this._createDevTools();
+       }
+       launch(progress2, options2, protocolLogger) {
+-        if (options2.channel?.startsWith("bidi-"))
++        /* @playwright-ohos-patched: patch-1-launch */
++        if (process.platform === "openharmony" && !options2.channel?.startsWith("bidi-")) {
++          const { launchViaHdc } = require("./ohos-launcher.cjs");
++          return launchViaHdc(this, progress2, options2);
++        }
++        if (options2.channel?.startsWith("bidi-")) {
+           return this._bidiChromium.launch(progress2, options2, protocolLogger);
++        }
+         return super.launch(progress2, options2, protocolLogger);
+       }
+       async launchPersistentContext(progress2, userDataDir, options2) {
+-        if (options2.channel?.startsWith("bidi-"))
++        /* @playwright-ohos-patched: patch-1b-persistent */
++        if (process.platform === "openharmony") {
++          throw new Error("launchPersistentContext is not supported on HarmonyOS: device browsers are launched via 'aa start' and do not support persistent contexts.");
++        }
++        if (options2.channel?.startsWith("bidi-")) {
+           return this._bidiChromium.launchPersistentContext(progress2, userDataDir, options2);
++        }
+         return super.launchPersistentContext(progress2, userDataDir, options2);
+       }
+       async connectOverCDP(progress2, endpointURL, options2) {
+@@ -41459,7 +41696,8 @@ ${remoteDebuggingHint(channel)}`);
+         };
+         try {
+           const browserProcess = { close: doClose, kill: doClose };
+-          const persistent = {
++          const persistent = options2.__ohosNoDefaultContext ? void 0 : {
++            /* @playwright-ohos-patched: patch-1e-no-default-context */
+             noDefaultViewport: true,
+             ...options2.noDefaults ? { acceptDownloads: "internal-browser-default" } : {}
+           };
+@@ -41475,9 +41713,16 @@ ${remoteDebuggingHint(channel)}`);
+             downloadsPath: options2.downloadsPath || artifactsDir,
+             tracesDir: options2.tracesDir || artifactsDir,
+             originalLaunchOptions: {},
+-            noDefaults: options2.noDefaults
++            noDefaults: options2.noDefaults,
++            /* @playwright-ohos-patched: patch-1d-connect-options */
++            __ohosHdcBackend: options2.__ohosHdcBackend,
++            __ohosArkWeb: !!options2.__ohosArkWeb,
++            __ohosNoDefaultContext: !!options2.__ohosNoDefaultContext
+           };
+-          validateBrowserContextOptions(persistent, browserOptions);
++          /* @playwright-ohos-patched: patch-1f-validate-guard */
++          if (persistent) {
++            validateBrowserContextOptions(persistent, browserOptions);
++          }
+           const browser = await progress2.race(CRBrowser.connect(this.attribution.playwright, transport, browserOptions));
+           if (!options2.isLocal)
+             browser._isCollocatedWithServer = false;
+@@ -47403,8 +47648,12 @@ if (navigator.serviceWorker) navigator.serviceWorker.register = async () => { co
+           promises.push(this._deleteAllDownloads());
+           promises.push(this._deleteAllTempDirs());
+           await progress2.race(Promise.all(promises));
+-          if (!this._customCloseHandler)
++          /* @playwright-ohos-patched: patch-7b-close-notify */
++        if (!this._customCloseHandler) {
+             this._didCloseInternal();
++          } else if (this._browser._isArkWeb) {
++            this._didCloseInternal();
++          }
+         }
+         await this._closePromise;
+       }
+@@ -47421,8 +47670,11 @@ if (navigator.serviceWorker) navigator.serviceWorker.register = async () => { co
+           }
+           throw pageOrError;
+         } catch (error) {
+-          await page?.close(progress2, { reason: "Failed to create page" }).catch(() => {
+-          });
++          /* @playwright-ohos-patched: patch-9c-newpage-guard */
++          if (!this._browser._isArkWeb) {
++            await page?.close(progress2, { reason: "Failed to create page" }).catch(() => {
++            });
++          }
+           throw error;
+         } finally {
+           this._creatingStorageStatePage = false;
+@@ -47526,10 +47778,16 @@ if (navigator.serviceWorker) navigator.serviceWorker.register = async () => { co
+ ` + error.message);
+           throw error;
+         } finally {
+-          if (mode !== "resetForReuse")
++          /* @playwright-ohos-patched: patch-9b-storage-page */
++          if (this._browser._isArkWeb) {
++            if (interceptor) {
++              await page?.removeRequestInterceptor(interceptor);
++            }
++          } else if (mode !== "resetForReuse") {
+             await page?.close(progress2);
+-          else if (interceptor)
++          } else if (interceptor) {
+             await page?.removeRequestInterceptor(interceptor);
++          }
+         }
+       }
+       async extendInjectedScript(source8, arg) {
+@@ -48012,6 +48270,10 @@ var init_serverRegistry = __esm({
+     defaultCacheDirectory2 = (() => {
+       if (process.platform === "linux")
+         return process.env.XDG_CACHE_HOME || import_path33.default.join(import_os16.default.homedir(), ".cache");
++      /* @playwright-ohos-patched: patch-0-cache-dir */
++      if (process.platform === "openharmony") {
++        return process.env.XDG_CACHE_HOME || import_path33.default.join(import_os16.default.homedir(), ".cache");
++      }
+       if (process.platform === "darwin")
+         return import_path33.default.join(import_os16.default.homedir(), "Library", "Caches");
+       if (process.platform === "win32")
+@@ -65330,7 +65592,11 @@ var init_registry2 = __esm({
+       if (process.platform === "darwin")
+         localCacheDir = import_path49.default.join(import_os21.default.homedir(), "Library", "Caches");
+       if (process.platform === "win32")
+-        localCacheDir = process.env.LOCALAPPDATA || import_path49.default.join(import_os21.default.homedir(), "AppData", "Local");
++      localCacheDir = process.env.LOCALAPPDATA || import_path49.default.join(import_os21.default.homedir(), "AppData", "Local");
++      /* @playwright-ohos-patched: patch-0-daemon-dir */
++      if (process.platform === "openharmony") {
++        localCacheDir = process.env.XDG_CACHE_HOME || import_path49.default.join(import_os21.default.homedir(), ".cache");
++      }
+       if (!localCacheDir)
+         throw new Error("Unsupported platform: " + process.platform);
+       return import_path49.default.join(localCacheDir, "ms-playwright", "daemon");
