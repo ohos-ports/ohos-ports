@@ -1,0 +1,10 @@
+--- a/packages/nx/src/native/assert-supported-platform.ts
++++ b/packages/nx/src/native/assert-supported-platform.ts
+@@ -10,6 +10,7 @@
+       process.platform == 'win32' ||
+       process.platform == 'darwin' ||
+       process.platform == 'linux' ||
++      (process.platform as string) == 'openharmony' ||
+       process.platform == 'freebsd'
+     ) {
+       title = 'Missing Platform Dependency';
