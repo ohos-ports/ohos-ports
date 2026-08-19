@@ -1,0 +1,16 @@
+--- a/packages/turbo/bin/turbo
++++ b/packages/turbo/bin/turbo
+@@ -113,6 +113,13 @@
+     }
+   }
+ 
++  // OpenHarmony port: resolve to the source-built binary embedded at
++  // bin/turbo-linux-arm64 — package managers os-filter @turbo/linux-arm64
++  // away on openharmony hosts, so it is typically not installed at all.
++  if (process.platform === "openharmony") {
++    return path.join(__dirname, "turbo-linux-arm64");
++  }
++
+   const availablePlatforms = [
+     'darwin',
+     'linux',

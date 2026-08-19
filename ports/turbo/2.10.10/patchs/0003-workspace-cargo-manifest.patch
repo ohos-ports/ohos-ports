@@ -1,0 +1,12 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -218,3 +218,9 @@
+ [patch.crates-io]
+ # Upstream 0.2.1 links ghostty-vt.lib (MSVC DLL import lib) instead of ghostty-vt-static.lib.
+ libghostty-vt-sys = { path = "crates/libghostty-vt-sys" }
++# OHOS port: nix 0.26.2 predates *-unknown-linux-ohos support; fold ohos into its musl cfgs.
++nix = { path = "vendor/nix" }
++# OHOS port: OHOS musl has no qsort_r; extend zstd's __ANDROID__ carve-outs to __OHOS__.
++zstd-sys = { path = "vendor/zstd-sys" }
++# OHOS port: upstream forces the CMake builder on ohos, which drops the aarch64 assembly.
++aws-lc-sys = { path = "vendor/aws-lc-sys" }

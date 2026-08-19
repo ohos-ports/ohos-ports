@@ -1,0 +1,22 @@
+--- a/packages/turbo/package.json
++++ b/packages/turbo/package.json
+@@ -1,11 +1,15 @@
+ {
+-  "name": "turbo",
+-  "version": "2.10.10",
+-  "description": "Turborepo is a high-performance build system for JavaScript and TypeScript codebases.",
++  "name": "@ohos-ports/turbo",
++  "version": "2.10.10-1",
++  "description": "Turborepo is a high-performance build system for JavaScript and TypeScript codebases. \u2014 OpenHarmony (OHOS) port: source-built binary embedded in the package; launcher resolves openharmony to it.",
+   "homepage": "https://turborepo.dev",
+   "bugs": "https://github.com/vercel/turborepo/issues",
+   "license": "MIT",
+-  "repository": "https://github.com/vercel/turborepo",
++  "repository": {
++    "type": "git",
++    "url": "https://github.com/ohos-ports/ohos-ports.git",
++    "directory": "ports/turbo/2.10.10"
++  },
+   "bin": {
+     "turbo": "./bin/turbo"
+   },

@@ -1,0 +1,14 @@
+--- a/builder/cc_builder.rs
++++ b/builder/cc_builder.rs
+@@ -818,9 +818,8 @@
+             return Err("CcBuilder only supports static builds".to_string());
+         }
+ 
+-        if target_env() == "ohos" {
+-            return Err("OpenHarmony targets must be built with CMake.".to_string());
+-        }
++        // OHOS port: upstream forces the CMake builder on ohos, which drops
++        // the aarch64 .S assembly (undefined aws_lc_* symbols at link).
+ 
+         if Some(true) == env_var_to_bool("CARGO_FEATURE_SSL") {
+             return Err("cc_builder for libssl not supported".to_string());

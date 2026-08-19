@@ -1,0 +1,120 @@
+--- a/src/fcntl.rs
++++ b/src/fcntl.rs
+@@ -104,7 +104,7 @@
+         #[cfg(any(target_os = "dragonfly",
+                   target_os = "freebsd",
+                   target_os = "ios",
+-                  all(target_os = "linux", not(target_env = "musl")),
++                  all(target_os = "linux", not(any(target_env = "musl", target_env = "ohos"))),
+                   target_os = "macos",
+                   target_os = "netbsd",
+                   target_os = "openbsd",
+--- a/src/sys/statfs.rs
++++ b/src/sys/statfs.rs
+@@ -64,7 +64,7 @@
+ type fs_type_t = libc::c_ulong;
+ #[cfg(all(target_os = "linux", target_arch = "s390x"))]
+ type fs_type_t = libc::c_uint;
+-#[cfg(all(target_os = "linux", target_env = "musl"))]
++#[cfg(all(target_os = "linux", any(target_env = "musl", target_env = "ohos")))]
+ type fs_type_t = libc::c_ulong;
+ #[cfg(all(target_os = "linux", target_env = "uclibc"))]
+ type fs_type_t = libc::c_int;
+@@ -73,7 +73,8 @@
+     not(any(
+         target_arch = "s390x",
+         target_env = "musl",
+-        target_env = "uclibc"
++        target_env = "uclibc",
++        target_env = "ohos"
+     ))
+ ))]
+ type fs_type_t = libc::__fsword_t;
+@@ -292,7 +293,7 @@
+ pub const NSFS_MAGIC: FsType = FsType(libc::NSFS_MAGIC as fs_type_t);
+ #[cfg(all(
+     any(target_os = "linux", target_os = "android"),
+-    not(target_env = "musl")
++    not(any(target_env = "musl", target_env = "ohos"))
+ ))]
+ #[allow(missing_docs)]
+ pub const XFS_SUPER_MAGIC: FsType = FsType(libc::XFS_SUPER_MAGIC as fs_type_t);
+@@ -342,7 +343,7 @@
+     /// Optimal transfer block size
+     #[cfg(any(
+         target_os = "android",
+-        all(target_os = "linux", target_env = "musl")
++        all(target_os = "linux", any(target_env = "musl", target_env = "ohos"))
+     ))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+     pub fn optimal_transfer_size(&self) -> libc::c_ulong {
+@@ -355,7 +356,8 @@
+         not(any(
+             target_arch = "s390x",
+             target_env = "musl",
+-            target_env = "uclibc"
++            target_env = "uclibc",
++            target_env = "ohos"
+         ))
+     ))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+@@ -401,7 +403,7 @@
+ 
+     /// Size of a block
+     // f_bsize on linux: https://github.com/torvalds/linux/blob/master/fs/nfs/super.c#L471
+-    #[cfg(all(target_os = "linux", target_env = "musl"))]
++    #[cfg(all(target_os = "linux", any(target_env = "musl", target_env = "ohos")))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+     pub fn block_size(&self) -> libc::c_ulong {
+         self.0.f_bsize
+@@ -422,7 +424,8 @@
+         not(any(
+             target_arch = "s390x",
+             target_env = "musl",
+-            target_env = "uclibc"
++            target_env = "uclibc",
++            target_env = "ohos"
+         ))
+     ))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+@@ -492,7 +495,7 @@
+     }
+ 
+     /// Maximum length of filenames
+-    #[cfg(all(target_os = "linux", target_env = "musl"))]
++    #[cfg(all(target_os = "linux", any(target_env = "musl", target_env = "ohos")))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+     pub fn maximum_name_length(&self) -> libc::c_ulong {
+         self.0.f_namelen
+@@ -511,7 +514,8 @@
+         not(any(
+             target_arch = "s390x",
+             target_env = "musl",
+-            target_env = "uclibc"
++            target_env = "uclibc",
++            target_env = "ohos"
+         ))
+     ))]
+     #[cfg_attr(docsrs, doc(cfg(all())))]
+--- a/src/sys/signal.rs
++++ b/src/sys/signal.rs
+@@ -1069,7 +1069,7 @@
+                 SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
+                 #[cfg(all(target_os = "linux", target_env = "uclibc"))]
+                 SigevNotify::SigevThreadId{..} => libc::SIGEV_THREAD_ID,
+-                #[cfg(any(all(target_os = "linux", target_env = "musl"), target_arch = "mips"))]
++                #[cfg(any(all(target_os = "linux", any(target_env = "musl", target_env = "ohos")), target_arch = "mips"))]
+                 SigevNotify::SigevThreadId{..} => 4  // No SIGEV_THREAD_ID defined
+             };
+             sev.sigev_signo = match sigev_notify {
+--- a/src/sys/statvfs.rs
++++ b/src/sys/statvfs.rs
+@@ -58,7 +58,7 @@
+         #[cfg_attr(docsrs, doc(cfg(all())))]
+         ST_NODIRATIME;
+         /// Update access time relative to modify/change time
+-        #[cfg(any(target_os = "android", all(target_os = "linux", not(target_env = "musl"))))]
++        #[cfg(any(target_os = "android", all(target_os = "linux", not(any(target_env = "musl", target_env = "ohos")))))]
+         #[cfg_attr(docsrs, doc(cfg(all())))]
+         ST_RELATIME;
+     }
