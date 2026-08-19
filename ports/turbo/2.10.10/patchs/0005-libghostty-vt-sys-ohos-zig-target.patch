@@ -1,0 +1,31 @@
+--- a/crates/libghostty-vt-sys/build.rs
++++ b/crates/libghostty-vt-sys/build.rs
+@@ -168,12 +168,11 @@
+             .arg(&zig_global_cache_dir);
+     }
+ 
+-    // Only pass -Dtarget when cross-compiling. For native builds, let zig
+-    // auto-detect the host (matches how ghostty's own CMakeLists.txt works).
+-    if target != host {
+-        let zig_target = zig_target(&target);
+-        build.arg(format!("-Dtarget={zig_target}"));
+-    }
++    // OHOS port: always pass -Dtarget, even for "native" builds — zig's
++    // native auto-detect on OHOS mixes its bundled headers with the ohos-sdk
++    // sysroot via include_next and dies on missing bits/alltypes.h.
++    let zig_target = zig_target(&target);
++    build.arg(format!("-Dtarget={zig_target}"));
+ 
+     run(build, "zig build");
+ 
+@@ -409,6 +408,10 @@
+         "aarch64-pc-windows-msvc" => "aarch64-windows-msvc",
+         "aarch64-linux-android" => "aarch64-linux-android",
+         "x86_64-linux-android" => "x86_64-linux-android",
++        // OHOS port: ghostty's build.zig has no ohos target; route onto musl
++        // (same libc/ABI) — the static lib is linked by rustc's linker anyway.
++        "aarch64-unknown-linux-ohos" => "aarch64-linux-musl",
++        "x86_64-unknown-linux-ohos" => "x86_64-linux-musl",
+         other => panic!("unsupported Rust target for vendored build: {other}"),
+     };
+     value.to_owned()

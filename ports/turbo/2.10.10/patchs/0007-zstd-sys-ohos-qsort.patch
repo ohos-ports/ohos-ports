@@ -1,0 +1,22 @@
+--- a/zstd/lib/common/zstd_deps.h
++++ b/zstd/lib/common/zstd_deps.h
+@@ -31,7 +31,7 @@
+  */
+ #if defined(__linux) || defined(__linux__) || defined(linux) || defined(__gnu_linux__) || \
+     defined(__CYGWIN__) || defined(__MSYS__)
+-#if !defined(_GNU_SOURCE) && !defined(__ANDROID__) /* NDK doesn't ship qsort_r(). */
++#if !defined(_GNU_SOURCE) && !defined(__ANDROID__) && !defined(__OHOS__) /* NDK/OHOS musl don't ship qsort_r(). */
+ #define _GNU_SOURCE
+ #endif
+ #endif
+--- a/zstd/lib/dictBuilder/cover.c
++++ b/zstd/lib/dictBuilder/cover.c
+@@ -24,7 +24,7 @@
+ /* qsort_r is an extension. */
+ #if defined(__linux) || defined(__linux__) || defined(linux) || defined(__gnu_linux__) || \
+     defined(__CYGWIN__) || defined(__MSYS__)
+-#if !defined(_GNU_SOURCE) && !defined(__ANDROID__) /* NDK doesn't ship qsort_r(). */
++#if !defined(_GNU_SOURCE) && !defined(__ANDROID__) && !defined(__OHOS__) /* NDK/OHOS musl don't ship qsort_r(). */
+ #define _GNU_SOURCE
+ #endif
+ #endif
