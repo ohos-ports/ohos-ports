@@ -1,0 +1,6 @@
+# Downloaded playwright-ohos source and per-version build artifacts
+playwright-ohos/
+playwright-ohos.tar.gz
+*/playwright-core-*/
+*/*.tgz
+*/.smoke/
