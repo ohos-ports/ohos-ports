@@ -1,0 +1,17 @@
+--- a/package.json
++++ b/package.json
+@@ -1,10 +1,11 @@
+ {
+-  "name": "playwright-core",
+-  "version": "1.62.1",
++  "name": "@ohos-ports/playwright-core",
++  "version": "1.62.1-1",
+   "description": "A high-level API to automate web browsers",
+   "repository": {
+     "type": "git",
+-    "url": "git+https://github.com/microsoft/playwright.git"
++    "url": "https://github.com/ohos-ports/ohos-ports.git",
++    "directory": "ports/playwright-core/1.62.1"
+   },
+   "homepage": "https://playwright.dev",
+   "engines": {
