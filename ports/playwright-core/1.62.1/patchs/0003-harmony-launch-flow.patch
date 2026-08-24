@@ -1,0 +1,96 @@
+diff --git a/packages/playwright-core/src/server/chromium/chromium.ts b/packages/playwright-core/src/server/chromium/chromium.ts
+index 68d0a90..ad7da08 100644
+--- a/packages/playwright-core/src/server/chromium/chromium.ts
++++ b/packages/playwright-core/src/server/chromium/chromium.ts
+@@ -38,6 +38,8 @@ import { helper } from '../helper';
+ import { registry } from '../registry';
+ import { WebSocketTransport } from '../transport';
+ import { CRDevTools } from './crDevTools';
++import { launchViaHdc } from '../../ohos/launcher';
++import { isOpenHarmony } from '../../ohos/utils';
+ import { Browser } from '../browser';
+ import { Worker } from '../page';
+ import { CRExecutionContext, createHandle } from './crExecutionContext';
+@@ -48,6 +50,7 @@ import type { HTTPRequestParams } from '@utils/network';
+ import type { BrowserOptions, BrowserProcess } from '../browser';
+ import type { SdkObject } from '../instrumentation';
+ import type { Progress } from '../progress';
++import type { HdcBackend } from '../../ohos/hdc';
+ import type { ConnectionTransport, ProtocolRequest } from '../transport';
+ import type { BrowserContext } from '../browserContext';
+ import type * as types from '../types';
+@@ -70,12 +73,21 @@ export class Chromium extends BrowserType {
+   }
+ 
+   override launch(progress: Progress, options: types.LaunchOptions, protocolLogger?: types.ProtocolLogger): Promise<Browser> {
++    // On openharmony, chromium.launch() delegates to the HDC launcher, which
++    // starts an on-device browser and connects over CDP.
++    if (isOpenHarmony() && !options.channel?.startsWith('bidi-'))
++      return launchViaHdc(this, progress, options);
+     if (options.channel?.startsWith('bidi-'))
+       return this._bidiChromium.launch(progress, options, protocolLogger);
+     return super.launch(progress, options, protocolLogger);
+   }
+ 
+   override async launchPersistentContext(progress: Progress, userDataDir: string, options: channels.BrowserTypeLaunchPersistentContextOptions & { internalIgnoreHTTPSErrors?: boolean, socksProxyPort?: number }): Promise<BrowserContext> {
++    // launchPersistentContext is not supported on openharmony: device
++    // browsers are started through `aa start` and cannot host persistent
++    // contexts.
++    if (isOpenHarmony())
++      throw new Error('launchPersistentContext is not supported on HarmonyOS: device browsers are launched via \'aa start\' and do not support persistent contexts.');
+     if (options.channel?.startsWith('bidi-'))
+       return this._bidiChromium.launchPersistentContext(progress, userDataDir, options);
+     return super.launchPersistentContext(progress, userDataDir, options);
+@@ -115,7 +127,7 @@ export class Chromium extends BrowserType {
+     return this._connectOverCDPImpl(progress, chromeTransport, closeAndWait, options, onClose);
+   }
+ 
+-  private async _connectOverCDPImpl(progress: Progress, transport: ConnectionTransport, closeAndWait: () => Promise<void>, options: types.LaunchOptions & { isLocal?: boolean, noDefaults?: boolean, artifactsDir?: string }, onClose?: () => Promise<void>) {
++  private async _connectOverCDPImpl(progress: Progress, transport: ConnectionTransport, closeAndWait: () => Promise<void>, options: types.LaunchOptions & { isLocal?: boolean, noDefaults?: boolean, artifactsDir?: string, __ohosHdcBackend?: HdcBackend, __ohosArkWeb?: boolean, __ohosNoDefaultContext?: boolean }, onClose?: () => Promise<void>) {
+     let artifactsDir: string;
+     const tempDirectories: string[] = [];
+     if (options.artifactsDir) {
+@@ -138,7 +150,10 @@ export class Chromium extends BrowserType {
+ 
+     try {
+       const browserProcess: BrowserProcess = { close: doClose, kill: doClose };
+-      const persistent: types.BrowserContextOptions = {
++      // Chromium-based device browsers behave like desktop Chrome and do not
++      // need the persistent default context that connectOverCDP normally
++      // creates; the HDC launcher skips it through __ohosNoDefaultContext.
++      const persistent: types.BrowserContextOptions | undefined = options.__ohosNoDefaultContext ? undefined : {
+         noDefaultViewport: true,
+         ...(options.noDefaults ? { acceptDownloads: 'internal-browser-default' as const } : {}),
+       };
+@@ -155,8 +170,12 @@ export class Chromium extends BrowserType {
+         tracesDir: options.tracesDir || artifactsDir,
+         originalLaunchOptions: {},
+         noDefaults: options.noDefaults,
++        __ohosHdcBackend: options.__ohosHdcBackend,
++        __ohosArkWeb: !!options.__ohosArkWeb,
++        __ohosNoDefaultContext: !!options.__ohosNoDefaultContext,
+       };
+-      validateBrowserContextOptions(persistent, browserOptions);
++      if (persistent)
++        validateBrowserContextOptions(persistent, browserOptions);
+       const browser = await progress.race(CRBrowser.connect(this.attribution.playwright, transport, browserOptions));
+       if (!options.isLocal)
+         browser._isBrowserCollocatedWithServer = false;
+diff --git a/packages/protocol/spec/mixins.yml b/packages/protocol/spec/mixins.yml
+index 36c1976..3c5c94f 100644
+--- a/packages/protocol/spec/mixins.yml
++++ b/packages/protocol/spec/mixins.yml
+@@ -93,6 +93,13 @@ LaunchOptions:
+     chromiumSandbox: boolean?
+     firefoxUserPrefs: json?
+     cdpPort: int?
++    harmonyBundleName: string?
++    harmonyDebugPort: float?
++    harmonyAbility: string?
++    harmonyLaunchUrl: string?
++    harmonyArgs:
++      type: array?
++      items: string
+ 
+ ContextOptions:
+   type: mixin
