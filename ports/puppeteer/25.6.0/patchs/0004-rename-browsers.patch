@@ -1,0 +1,9 @@
+--- a/packages/browsers/package.json
++++ b/packages/browsers/package.json
+@@ -1,4 +1,4 @@
+ {
+-  "name": "@puppeteer/browsers",
++  "name": "@ohos-ports/puppeteer-browsers",
+   "version": "3.2.0",
+   "description": "Download and launch browsers",
+   "scripts": {

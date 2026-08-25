@@ -1,0 +1,31 @@
+--- a/packages/puppeteer-core/src/api/ElementHandle.ts	2026-08-19 12:10:43.393057969 +0800
++++ b/packages/puppeteer-core/src/api/ElementHandle.ts	2026-08-19 12:10:43.617057500 +0800
+@@ -736,13 +736,13 @@
+     }
+     if (offset !== undefined) {
+       return {
+-        x: box.x + offset.x,
+-        y: box.y + offset.y,
++        x: Math.round(box.x + offset.x),
++        y: Math.round(box.y + offset.y),
+       };
+     }
+     return {
+-      x: box.x + box.width / 2,
+-      y: box.y + box.height / 2,
++      x: Math.round(box.x + box.width / 2),
++      y: Math.round(box.y + box.height / 2),
+     };
+   }
+ 
+@@ -1264,8 +1264,8 @@
+       return null;
+     }
+     return {
+-      x: box.x + offset.x,
+-      y: box.y + offset.y,
++      x: Math.round(box.x + offset.x),
++      y: Math.round(box.y + offset.y),
+       height: box.height,
+       width: box.width,
+     };

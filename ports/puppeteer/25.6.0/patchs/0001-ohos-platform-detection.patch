@@ -1,0 +1,20 @@
+--- a/packages/browsers/src/detectPlatform.ts	2026-08-19 15:32:23.017950156 +0800
++++ b/packages/browsers/src/detectPlatform.ts	2026-08-19 15:32:23.069950156 +0800
+@@ -14,7 +14,7 @@
+ export function detectBrowserPlatform(): BrowserPlatform | undefined {
+   const platform = os.platform();
+   const arch = os.arch();
+-  switch (platform) {
++  switch (platform as string) {
+     case 'darwin':
+       return arch === 'arm64' ? BrowserPlatform.MAC_ARM : BrowserPlatform.MAC;
+     case 'linux':
+@@ -27,6 +27,8 @@
+         (arch === 'arm64' && isWindows11(os.release()))
+         ? BrowserPlatform.WIN64
+         : BrowserPlatform.WIN32;
++    case 'openharmony':
++      return undefined;
+     default:
+       return undefined;
+   }

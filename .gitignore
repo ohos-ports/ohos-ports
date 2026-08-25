@@ -1,2 +1,6 @@
 .git/
 .plan/
+
+# Build workspaces (created by build.sh, not tracked)
+ports/*/build-workspace/
+ports/puppeteer/25.6.0/puppeteer-25.6.0/

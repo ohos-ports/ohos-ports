@@ -1,0 +1,13 @@
+--- a/packages/puppeteer-core/src/node/BrowserLauncher.ts	2026-08-19 12:10:43.369057656 +0800
++++ b/packages/puppeteer-core/src/node/BrowserLauncher.ts	2026-08-19 12:10:43.509059531 +0800
+@@ -109,6 +109,10 @@
+   }
+
+   async launch(options: LaunchOptions = {}): Promise<Browser> {
++    if (process.platform === 'openharmony') {
++      const {launchViaOhos} = await import('./OhosLauncher.js');
++      return await launchViaOhos(this, options);
++    }
+     options.logger ??= this.#logger;
+     const {
+       dumpio = false,
