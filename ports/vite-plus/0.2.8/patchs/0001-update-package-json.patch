@@ -1,0 +1,22 @@
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+-  "name": "vite-plus",
+-  "version": "0.2.8",
++  "name": "@ohos-ports/vite-plus",
++  "version": "0.2.8-1",
+   "description": "The Unified Toolchain for the Web",
+   "homepage": "https://viteplus.dev/guide",
+   "bugs": {
+@@ -10,8 +10,8 @@
+   "author": "VoidZero Inc.",
+   "repository": {
+     "type": "git",
+-    "url": "git+https://github.com/voidzero-dev/vite-plus.git",
+-    "directory": "packages/cli"
++    "url": "git+https://github.com/ohos-ports/ohos-ports.git",
++    "directory": "ports/vite-plus/0.2.8"
+   },
+   "bin": {
+     "oxfmt": "./bin/oxfmt",
