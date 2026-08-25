@@ -14,6 +14,9 @@ set -e
 VERSION=1.62.1
 PKG=playwright-core
 
+# Idempotent re-runs: drop any artifact left by a previous build.
+rm -rf "${PKG}-${VERSION}" package
+
 curl -fsSL "https://registry.npmjs.org/${PKG}/-/playwright-core-${VERSION}.tgz" -o core.tgz
 tar -zxf core.tgz
 rm core.tgz
