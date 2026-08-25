@@ -1,0 +1,4 @@
+# Build artifacts (build.sh runs in this directory)
+playwright-core-*/
+*.tgz
+.smoke/
