@@ -1,0 +1,27 @@
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+-  "name": "playwright-core",
+-  "version": "1.63.0-alpha-2026-08-05",
++  "name": "@ohos-ports/playwright-core",
++  "version": "1.63.0-alpha-2026-08-05-1",
+   "description": "A high-level API to automate web browsers",
+   "repository": {
+     "type": "git",
+@@ -7,4 +7,4 @@
+-    "url": "git+https://github.com/microsoft/playwright.git"
++    "url": "https://github.com/ohos-ports/ohos-ports"
+   },
+   "homepage": "https://playwright.dev",
+   "engines": {
+@@ -30,5 +30,8 @@
+   "bin": {
+     "playwright-core": "cli.js"
+   },
+-  "types": "types/types.d.ts"
++  "types": "types/types.d.ts",
++  "bugs": {
++    "url": "https://github.com/ohos-ports/ohos-ports/issues"
++  }
+ }

@@ -1,0 +1,505 @@
+--- a/lib/coreBundle.js
++++ b/lib/coreBundle.js
+@@ -16411,6 +16411,12 @@
+       name: tString
+     });
+     scheme.BrowserTypeLaunchParams = tObject({
++      /* @playwright-ohos-patched: patch-1g-launch-schema */
++      harmonyBundleName: tOptional(tString),
++      harmonyDebugPort: tOptional(tFloat),
++      harmonyAbility: tOptional(tString),
++      harmonyLaunchUrl: tOptional(tString),
++      harmonyArgs: tOptional(tArray(tString)),
+       channel: tOptional(tString),
+       executablePath: tOptional(tString),
+       args: tOptional(tArray(tString)),
+@@ -22345,6 +22351,37 @@
+       }
+       async goBack(progress2, options) {
+         return this.mainFrame().raceNavigationAction(progress2, async () => {
++          /* @playwright-ohos-patched: patch-1h-go-back */
++          if (this.browserContext._browser._hdcBackend) {
++            const url = await progress2.race(this.delegate.goBack());
++            if (!url) {
++              return null;
++            }
++            return {
++              guid: "ohos-history-response-" + Date.now() + "-" + Math.random(),
++              url: () => url,
++              status: () => 200,
++              statusText: () => "",
++              headers: () => [],
++              timing: () => ({ startTime: 0, domainLookupStart: -1, domainLookupEnd: -1, connectStart: -1, secureConnectionStart: -1, connectEnd: -1, requestStart: 0, responseStart: 0 }),
++              fromServiceWorker: () => false,
++              request: () => ({
++                guid: "ohos-history-request-" + Date.now() + "-" + Math.random(),
++                url: () => url,
++                method: () => "GET",
++                postDataBuffer: () => null,
++                headers: () => [],
++                resourceType: () => "document",
++                isNavigationRequest: () => true,
++                _existingResponse: () => null,
++                redirectedFrom: () => null,
++                serviceWorker: () => null,
++                frame: () => this.mainFrame(),
++                timing: () => ({ startTime: 0, domainLookupStart: -1, domainLookupEnd: -1, connectStart: -1, secureConnectionStart: -1, connectEnd: -1, requestStart: 0, responseStart: 0 }),
++                sizes: () => ({ requestBodySize: 0, responseBodySize: 0, transferSize: 0 })
++              })
++            };
++          }
+           let error;
+           const waitPromise = this.mainFrame().waitForNavigation(progress2, false, options).catch((e) => {
+             error = e;
+@@ -22364,6 +22401,37 @@
+       }
+       async goForward(progress2, options) {
+         return this.mainFrame().raceNavigationAction(progress2, async () => {
++          /* @playwright-ohos-patched: patch-1h-go-forward */
++          if (this.browserContext._browser._hdcBackend) {
++            const url = await progress2.race(this.delegate.goForward());
++            if (!url) {
++              return null;
++            }
++            return {
++              guid: "ohos-history-response-" + Date.now() + "-" + Math.random(),
++              url: () => url,
++              status: () => 200,
++              statusText: () => "",
++              headers: () => [],
++              timing: () => ({ startTime: 0, domainLookupStart: -1, domainLookupEnd: -1, connectStart: -1, secureConnectionStart: -1, connectEnd: -1, requestStart: 0, responseStart: 0 }),
++              fromServiceWorker: () => false,
++              request: () => ({
++                guid: "ohos-history-request-" + Date.now() + "-" + Math.random(),
++                url: () => url,
++                method: () => "GET",
++                postDataBuffer: () => null,
++                headers: () => [],
++                resourceType: () => "document",
++                isNavigationRequest: () => true,
++                _existingResponse: () => null,
++                redirectedFrom: () => null,
++                serviceWorker: () => null,
++                frame: () => this.mainFrame(),
++                timing: () => ({ startTime: 0, domainLookupStart: -1, domainLookupEnd: -1, connectStart: -1, secureConnectionStart: -1, connectEnd: -1, requestStart: 0, responseStart: 0 }),
++                sizes: () => ({ requestBodySize: 0, responseBodySize: 0, transferSize: 0 })
++              })
++            };
++          }
+           let error;
+           const waitPromise = this.mainFrame().waitForNavigation(progress2, false, options).catch((e) => {
+             error = e;
+@@ -22720,7 +22788,15 @@
+         const bindings = [...this.browserContext._pageBindings.values(), ...this._pageBindings.values()].map((binding) => binding.initScript);
+         if (this.browserContext.bindingsInitScript)
+           bindings.unshift(this.browserContext.bindingsInitScript);
+-        return [...bindings, ...this.browserContext.initScripts, ...this.initScripts];
++        {
++          /* @playwright-ohos-patched: patch-init-script */
++          const scripts = [...bindings, ...this.browserContext.initScripts, ...this.initScripts];
++          if (this.browserContext._browser._hdcBackend) {
++            const { ohosInitScript } = require("./ohos-launcher.cjs");
++            scripts.push({ source: ohosInitScript });
++          }
++          return scripts;
++        }
+       }
+       getBinding(name) {
+         return this._pageBindings.get(name) || this.browserContext._pageBindings.get(name);
+@@ -32403,6 +32479,10 @@
+ function computeDefaultCacheDirectory() {
+   if (process.platform === "linux")
+     return process.env.XDG_CACHE_HOME || import_path20.default.join(import_os8.default.homedir(), ".cache");
++      /* @playwright-ohos-patched: patch-0-cache-dir */
++      if (process.platform === "openharmony") {
++        return process.env.XDG_CACHE_HOME || import_path20.default.join(import_os8.default.homedir(), ".cache");
++      }
+   if (process.platform === "darwin")
+     return import_path20.default.join(import_os8.default.homedir(), "Library", "Caches");
+   if (process.platform === "win32")
+@@ -33117,7 +33197,34 @@
+           }
+         });
+         const ffmpeg = descriptors.find((d) => d.name === "ffmpeg");
+-        const ffmpegExecutable = findExecutablePath(ffmpeg.dir, "ffmpeg");
++        const ffmpegExecutable = process.platform === "openharmony" ? (() => {
++        /* @playwright-ohos-patched: patch-0-ffmpeg */
++        const candidates = [];
++        try {
++          const { execFileSync } = require("child_process");
++          const out = execFileSync("sh", ["-c", "command -v ffmpeg 2>/dev/null || true"], { encoding: "utf8", timeout: 8000 }).trim();
++          const first = out.split("\n")[0].trim();
++          if (first) {
++            candidates.push(first);
++          }
++        } catch {
++        }
++        try {
++          const { homedir } = require("os");
++          const { join } = require("path");
++          candidates.push(join(homedir(), ".harmonybrew", "bin", "ffmpeg"));
++        } catch {
++        }
++        for (const candidate of candidates) {
++          try {
++            if (require("fs").existsSync(candidate)) {
++              return candidate;
++            }
++          } catch {
++          }
++        }
++        return void 0;
++      })() : findExecutablePath(ffmpeg.dir, "ffmpeg");
+         this._executables.push({
+           name: "ffmpeg",
+           browserName: void 0,
+@@ -37105,6 +37212,20 @@
+         if (!entry)
+           return false;
+         await this._mainFrameSession._client.send("Page.navigateToHistoryEntry", { entryId: entry.id });
++        /* @playwright-ohos-patched: patch-1h-history-navigation */
++        if (this._page.browserContext._browser._hdcBackend) {
++          const deadline = Date.now() + 30000;
++          while (Date.now() < deadline) {
++            await new Promise((resolve) => setTimeout(resolve, 200));
++            const { result } = await this._mainFrameSession._client.send("Runtime.evaluate", {
++              expression: "location.href",
++              returnByValue: true
++            });
++            if (result?.value === entry.url)
++              break;
++          }
++          return entry.url;
++        }
+         return true;
+       }
+       goBack() {
+@@ -37151,8 +37272,18 @@
+           const deviceScaleFactor = this._mainFrameSession._metricsOverride?.deviceScaleFactor || contentSize.width / cssContentSize.width || 1;
+           clip.scale /= deviceScaleFactor;
+         }
+-        const result2 = await progress2.race(this._mainFrameSession._client.send("Page.captureScreenshot", { format: format2, quality, clip, captureBeyondViewport: !fitsViewport }));
+-        return Buffer.from(result2.data, "base64");
++        try {
++          const result2 = await progress2.race(this._mainFrameSession._client.send("Page.captureScreenshot", { format: format2, quality, clip, captureBeyondViewport: !fitsViewport }));
++          return Buffer.from(result2.data, "base64");
++        } catch (error) {
++          /* @playwright-ohos-patched: patch-3b-screenshot-fallback */
++          const hdcBackend = this._browserContext._browser._hdcBackend;
++          if (!hdcBackend || format2 !== "png") {
++            throw error;
++          }
++          const { hdcScreenshot } = require("./ohos-launcher.cjs");
++          return await hdcScreenshot(hdcBackend);
++        }
+       }
+       async getContentFrame(handle) {
+         return this._sessionForHandle(handle)._getContentFrame(handle);
+@@ -37656,11 +37787,12 @@
+       }
+       _onScreencastFrame(payload) {
+         const buffer = Buffer.from(payload.data, "base64");
++        /* @playwright-ohos-patched: patch-8b-screencast-viewport */
+         void this._page.screencast.onScreencastFrame({
+-          buffer,
++          buffer: buffer,
+           frameSwapWallTime: payload.metadata.timestamp ? payload.metadata.timestamp * 1e3 : Date.now(),
+-          viewportWidth: payload.metadata.deviceWidth,
+-          viewportHeight: payload.metadata.deviceHeight
++          viewportWidth: this._page.browserContext._browser._hdcBackend ? (this._metricsOverride?.width ?? Math.round(payload.metadata.deviceWidth)) : payload.metadata.deviceWidth,
++          viewportHeight: this._page.browserContext._browser._hdcBackend ? (this._metricsOverride?.height ?? Math.round(payload.metadata.deviceHeight)) : payload.metadata.deviceHeight
+         }).then(() => {
+           this._client._sendMayFail("Page.screencastFrameAck", { sessionId: payload.sessionId });
+         });
+@@ -37820,8 +37952,18 @@
+         const width = Math.max(quad[0], quad[2], quad[4], quad[6]) - x;
+         const height = Math.max(quad[1], quad[3], quad[5], quad[7]) - y;
+         const position = await this._framePosition();
+-        if (!position)
++        if (!position) {
+           return null;
++        }
++        /* @playwright-ohos-patched: patch-8-bounding-box */
++        if (this._page.browserContext._browser._hdcBackend) {
++          return {
++            x: Math.round(x + position.x),
++            y: Math.round(y + position.y),
++            width: Math.round(width),
++            height: Math.round(height)
++          };
++        }
+         return { x: x + position.x, y: y + position.y, width, height };
+       }
+       async _framePosition() {
+@@ -38050,6 +38192,14 @@
+         const connection = new CRConnection(parent, transport, options.protocolLogger, options.browserLogsCollector);
+         const browser = new _CRBrowser(parent, connection, options);
+         browser._devtools = devtools;
++        /* @playwright-ohos-patched: patch-1c-connect-flags */
++        browser._hdcBackend = options.__ohosHdcBackend || void 0;
++        browser._isArkWeb = !!options.__ohosArkWeb;
++        if (browser._hdcBackend) {
++          browser._isCollocatedWithServer = false;
++          browser._isBrowserCollocatedWithServer = false;
++        }
++
+         if (browser.isClank())
+           browser._isBrowserCollocatedWithServer = false;
+         const session2 = connection.rootSession;
+@@ -38079,6 +38229,35 @@
+         return browser;
+       }
+       async doCreateNewContext(options) {
++        /* @playwright-ohos-patched: patch-5-reuse-context */
++        if (this._isArkWeb && this._defaultContext) {
++          // The reused context would drop the requested emulation options;
++          // apply them so pages behave like on desktop chromium (the last
++          // requested context wins).
++          if (options.viewport) {
++            this._defaultContext._options.viewport = options.viewport;
++            this._defaultContext._options.screen = options.screen || options.viewport;
++            this._defaultContext._options.deviceScaleFactor = options.deviceScaleFactor || this._defaultContext._options.deviceScaleFactor || 1;
++          }
++          if (options.hasTouch !== undefined) {
++            this._defaultContext._options.hasTouch = options.hasTouch;
++          }
++          if (options.isMobile !== undefined) {
++            this._defaultContext._options.isMobile = options.isMobile;
++          }
++          for (const crPage of this._defaultContext._crPages()) {
++            if (options.viewport) {
++              crPage._page._setEmulatedSize({ viewport: options.viewport, screen: options.screen || options.viewport });
++              await crPage.updateEmulatedViewportSize();
++            }
++            // Touch emulation only takes effect before the page navigates,
++            // so it must be pushed here at context creation time.
++            if (options.hasTouch !== undefined) {
++              await crPage._mainFrameSession._client.send("Emulation.setTouchEmulationEnabled", { enabled: !!options.hasTouch });
++            }
++          }
++          return this._defaultContext;
++        }
+         const proxy = options.proxyOverride || options.proxy;
+         let proxyBypassList = void 0;
+         if (proxy) {
+@@ -38126,7 +38305,9 @@
+         if (targetInfo.type === "browser")
+           return;
+         const session2 = this._session.createChildSession(sessionId);
+-        assert(targetInfo.browserContextId, "targetInfo: " + JSON.stringify(targetInfo, null, 2));
++        if (!this._isArkWeb) {
++          assert(targetInfo.browserContextId, "targetInfo: " + JSON.stringify(targetInfo, null, 2));
++        } /* @playwright-ohos-patched: patch-2a-context-assert */
+         let context2 = this._contexts.get(targetInfo.browserContextId) || null;
+         if (!context2) {
+           context2 = this._defaultContext;
+@@ -38135,7 +38316,7 @@
+           this._devtools.install(session2);
+           return;
+         }
+-        const treatOtherAsPage = targetInfo.type === "other" && process.env.PW_CHROMIUM_ATTACH_TO_OTHER;
++        const treatOtherAsPage = targetInfo.type === "other" && (process.env.PW_CHROMIUM_ATTACH_TO_OTHER || this._isArkWeb); /* @playwright-ohos-patched: patch-2-other-targets */
+         if (!context2 || targetInfo.type === "other" && !treatOtherAsPage) {
+           session2.detach().catch(() => {
+           });
+@@ -38147,6 +38328,12 @@
+           const opener = targetInfo.openerId ? this._crPages.get(targetInfo.openerId) || null : null;
+           const crPage = new CRPage(session2, targetInfo.targetId, context2, opener, { hasUIWindow: targetInfo.type === "page" });
+           this._crPages.set(targetInfo.targetId, crPage);
++        /* @playwright-ohos-patched: patch-2b-history-reset */
++        if (this._isArkWeb) {
++          crPage._page.waitForInitializedOrError().then(async () => {
++            await crPage._mainFrameSession._client.send("Page.resetNavigationHistory").catch(() => {});
++          }).catch(() => {});
++        }
+           return;
+         }
+         if (targetInfo.type === "service_worker") {
+@@ -38210,6 +38397,11 @@
+           this.downloadFinished(payload.guid, this._closeReason || "canceled");
+       }
+       async _closePage(crPage) {
++        /* @playwright-ohos-patched: patch-6b-close-page */
++        if (this._isArkWeb) {
++          await crPage._mainFrameSession._client.send("Page.navigate", { url: "about:blank" }).catch(() => {});
++          return;
++        }
+         await this._session.send("Target.closeTarget", { targetId: crPage._targetId });
+       }
+       async newBrowserCDPSession() {
+@@ -38297,6 +38489,14 @@
+         return this._crPages().map((crPage) => crPage._page);
+       }
+       async doCreateNewPage() {
++        /* @playwright-ohos-patched: patch-6-reuse-page */
++        if (this._browser._isArkWeb) {
++          for (const crPage of this._browser._crPages.values()) {
++            if (crPage._browserContext === this && crPage._page._closedState === "open") {
++              return crPage._page;
++            }
++          }
++        }
+         const { targetId } = await this._browser._session.send("Target.createTarget", { url: "about:blank", browserContextId: this._browserContextId });
+         return this._browser._crPages.get(targetId)._page;
+       }
+@@ -38450,6 +38650,32 @@
+       }
+       async doClose(reason) {
+         await this.dialogManager.closeBeforeUnloadDialogs();
++        /* @playwright-ohos-patched: patch-7-context-close */
++        if (this._browser._isArkWeb) {
++          for (const binding of this._pageBindings.values()) {
++            await binding.dispose().catch(() => {});
++          }
++          const pages = [...this._crPages()];
++          for (const crPage of pages) {
++            await this._browser._closePage(crPage).catch(() => {});
++          }
++          for (const [targetId, serviceWorker] of this._browser._serviceWorkers) {
++            if (serviceWorker.browserContext !== this) {
++              continue;
++            }
++            serviceWorker.didClose();
++            this._browser._serviceWorkers.delete(targetId);
++          }
++          try {
++            await this._browser._session.send("Storage.clearDataForOrigin", { origin: "*", storageTypes: "all" });
++          } catch {
++          }
++          try {
++            await this._browser._session.send("Browser.resetPermissions", { browserContextId: this._browserContextId });
++          } catch {
++          }
++          return;
++        }
+         if (!this._browserContextId) {
+           return "close-browser";
+         }
+@@ -42762,8 +42988,14 @@
+           this._devtools = this._createDevTools();
+       }
+       launch(progress2, options, protocolLogger) {
+-        if (options.channel?.startsWith("bidi-"))
++        /* @playwright-ohos-patched: patch-1-launch */
++        if (process.platform === "openharmony" && !options.channel?.startsWith("bidi-")) {
++          const { launchViaHdc } = require("./ohos-launcher.cjs");
++          return launchViaHdc(this, progress2, options);
++        }
++        if (options.channel?.startsWith("bidi-")) {
+           return this._bidiChromium.launch(progress2, options, protocolLogger);
++        }
+         return super.launch(progress2, options, protocolLogger);
+       }
+       async launchPersistentContext(progress2, userDataDir, options) {
+@@ -42770,5 +43002,10 @@
+-        if (options.channel?.startsWith("bidi-"))
++        /* @playwright-ohos-patched: patch-1b-persistent */
++        if (process.platform === "openharmony") {
++          throw new Error("launchPersistentContext is not supported on HarmonyOS: device browsers are launched via 'aa start' and do not support persistent contexts.");
++        }
++        if (options.channel?.startsWith("bidi-")) {
+           return this._bidiChromium.launchPersistentContext(progress2, userDataDir, options);
++        }
+         return super.launchPersistentContext(progress2, userDataDir, options);
+       }
+       async connectOverCDP(progress2, params2) {
+@@ -42822,7 +43059,8 @@
+         };
+         try {
+           const browserProcess = { close: doClose, kill: doClose };
+-          const persistent = {
++          const persistent = options.__ohosNoDefaultContext ? void 0 : {
++            /* @playwright-ohos-patched: patch-1e-no-default-context */
+             noDefaultViewport: true,
+             ...options.noDefaults ? { acceptDownloads: "internal-browser-default" } : {}
+           };
+@@ -42838,9 +43076,16 @@
+             downloadsPath: options.downloadsPath || artifactsDir,
+             tracesDir: options.tracesDir || artifactsDir,
+             originalLaunchOptions: {},
+-            noDefaults: options.noDefaults
++            noDefaults: options.noDefaults,
++            /* @playwright-ohos-patched: patch-1d-connect-options */
++            __ohosHdcBackend: options.__ohosHdcBackend,
++            __ohosArkWeb: !!options.__ohosArkWeb,
++            __ohosNoDefaultContext: !!options.__ohosNoDefaultContext
+           };
+-          validateBrowserContextOptions(persistent, browserOptions);
++          /* @playwright-ohos-patched: patch-1f-validate-guard */
++          if (persistent) {
++            validateBrowserContextOptions(persistent, browserOptions);
++          }
+           const browser = await progress2.race(CRBrowser.connect(this.attribution.playwright, transport, browserOptions));
+           if (!options.isLocal)
+             browser._isBrowserCollocatedWithServer = false;
+@@ -51588,8 +51833,12 @@
+           promises2.push(this._deleteAllDownloads());
+           promises2.push(this._deleteAllTempDirs());
+           await progress2.race(Promise.all(promises2));
+-          if (!this._customCloseHandler)
++          /* @playwright-ohos-patched: patch-7b-close-notify */
++        if (!this._customCloseHandler) {
+             this._didCloseInternal();
++          } else if (this._browser._isArkWeb) {
++            this._didCloseInternal();
++          }
+         }
+         await this._closePromise;
+       }
+@@ -51606,8 +51855,11 @@
+           }
+           throw pageOrError;
+         } catch (error) {
+-          await page?.close(progress2, { reason: "Failed to create page" }).catch(() => {
+-          });
++          /* @playwright-ohos-patched: patch-9c-newpage-guard */
++          if (!this._browser._isArkWeb) {
++            await page?.close(progress2, { reason: "Failed to create page" }).catch(() => {
++            });
++          }
+           throw error;
+         } finally {
+           this._creatingStorageStatePage = false;
+@@ -51722,10 +51974,16 @@
+ ` + error.message);
+           throw error;
+         } finally {
+-          if (mode !== "resetForReuse")
++          /* @playwright-ohos-patched: patch-9b-storage-page */
++          if (this._browser._isArkWeb) {
++            if (interceptor) {
++              await page?.removeRequestInterceptor(interceptor);
++            }
++          } else if (mode !== "resetForReuse") {
+             await page?.close(progress2);
+-          else if (interceptor)
++          } else if (interceptor) {
+             await page?.removeRequestInterceptor(interceptor);
++          }
+         }
+       }
+       async extendInjectedScript(source12, arg) {
+@@ -52049,6 +52307,10 @@
+ function computeDefaultCacheDirectory2() {
+   if (process.platform === "linux")
+     return process.env.XDG_CACHE_HOME || import_path34.default.join(import_os17.default.homedir(), ".cache");
++      /* @playwright-ohos-patched: patch-0-cache-dir */
++      if (process.platform === "openharmony") {
++        return process.env.XDG_CACHE_HOME || import_path34.default.join(import_os17.default.homedir(), ".cache");
++      }
+   if (process.platform === "darwin")
+     return import_path34.default.join(import_os17.default.homedir(), "Library", "Caches");
+   if (process.platform === "win32")
+@@ -70460,7 +70722,11 @@
+   if (process.platform === "darwin")
+     localCacheDir = import_path56.default.join(import_os23.default.homedir(), "Library", "Caches");
+   if (process.platform === "win32")
+-    localCacheDir = process.env.LOCALAPPDATA || import_path56.default.join(import_os23.default.homedir(), "AppData", "Local");
++      localCacheDir = process.env.LOCALAPPDATA || import_path56.default.join(import_os23.default.homedir(), "AppData", "Local");
++      /* @playwright-ohos-patched: patch-0-daemon-dir */
++      if (process.platform === "openharmony") {
++        localCacheDir = process.env.XDG_CACHE_HOME || import_path56.default.join(import_os23.default.homedir(), ".cache");
++      }
+   if (!localCacheDir)
+     throw new Error("Unsupported platform: " + process.platform);
+   return import_path56.default.join(localCacheDir, "ms-playwright", "daemon");
