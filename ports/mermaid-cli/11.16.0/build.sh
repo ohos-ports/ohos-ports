@@ -36,7 +36,7 @@ echo "[build] modifying package.json..."
 node -e "
 const fs = require('fs');
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-pkg.name = '@ohos-ports/mermaid-cli';
+pkg.name = '@ohos-ports/mermaid-js-mermaid-cli';
 pkg.version = '${BETA_VERSION}';
 pkg.peerDependencies = { '@ohos-ports/puppeteer': '^25.6.0-beta.0' };
 delete pkg.scripts.prepare;
@@ -50,7 +50,7 @@ console.log('  ✓ package.json (${BETA_VERSION})');
 echo "[build] verifying..."
 grep -q "@ohos-ports/puppeteer" src/index.js || { echo "ERROR: index.js not patched" >&2; exit 1; }
 grep -q "@ohos-ports/puppeteer" src/puppeteerIntercept.js || { echo "ERROR: puppeteerIntercept.js not patched" >&2; exit 1; }
-grep -q "@ohos-ports/mermaid-cli" package.json || { echo "ERROR: package.json not renamed" >&2; exit 1; }
+grep -q "@ohos-ports/mermaid-js-mermaid-cli" package.json || { echo "ERROR: package.json not renamed" >&2; exit 1; }
 echo "  ✓ all patches verified"
 
 # 6. Pack tgz

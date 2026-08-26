@@ -4,3 +4,4 @@
 # Build workspaces (created by build.sh, not tracked)
 ports/*/build-workspace/
 ports/puppeteer/25.6.0/puppeteer-25.6.0/
+ports/mermaid-cli/11.16.0/mermaid-cli-11.16.0/
