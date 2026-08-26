@@ -1,0 +1,18 @@
+--- a/bin/tsgolint.js
++++ b/bin/tsgolint.js
+@@ -3,9 +3,12 @@
+ const process = require('node:process');
+ const child_process = require('node:child_process');
+ 
+-const exePath = require.resolve(
+-  `@oxlint-tsgolint/${process.platform}-${process.arch}/tsgolint${process.platform === 'win32' ? '.exe' : ''}`,
+-);
++const exePath =
++  process.platform === 'openharmony'
++    ? require('node:path').join(__dirname, '..', '@oxlint-tsgolint', 'openharmony-arm64', 'tsgolint')
++    : require.resolve(
++        `@oxlint-tsgolint/${process.platform}-${process.arch}/tsgolint${process.platform === 'win32' ? '.exe' : ''}`,
++      );
+ 
+ try {
+   child_process.execFileSync(exePath, process.argv.slice(2), {

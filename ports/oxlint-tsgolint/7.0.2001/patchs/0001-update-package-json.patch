@@ -1,0 +1,27 @@
+--- a/package.json
++++ b/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "version": "7.0.2001",
++  "version": "7.0.2001-1",
+   "description": "High-performance type-aware TypeScript linter powered by typescript-go, for use with oxlint.",
+   "license": "MIT",
+   "author": "auvred <aauvred@gmail.com>",
+@@ -6,6 +6,7 @@
+   "repository": {
+     "type": "git",
+-    "url": "github:oxc-project/tsgolint"
++    "url": "git+https://github.com/ohos-ports/ohos-ports.git",
++    "directory": "ports/oxlint-tsgolint/7.0.2001"
+   },
+   "bugs": "https://github.com/oxc-project/tsgolint/issues",
+   "homepage": "https://github.com/oxc-project/tsgolint#readme",
+@@ -12,7 +13,7 @@
+   "publishConfig": {
+     "access": "public"
+   },
+-  "name": "oxlint-tsgolint",
++  "name": "@ohos-ports/oxlint-tsgolint",
+   "bin": {
+     "tsgolint": "./bin/tsgolint.js"
+   },
