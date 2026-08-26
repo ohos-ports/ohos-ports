@@ -1,0 +1,11 @@
+--- a/src/puppeteerIntercept.js
++++ b/src/puppeteerIntercept.js
+@@ -5,7 +5,7 @@
+ import { readFile, realpath } from "node:fs/promises";
+ import path from "node:path";
+ import url from "node:url";
+-import { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } from "puppeteer";
++import { DEFAULT_INTERCEPT_RESOLUTION_PRIORITY } from "@ohos-ports/puppeteer";
+
+ /**
+  * Guesses the MIME-type of a file based on its extension.
