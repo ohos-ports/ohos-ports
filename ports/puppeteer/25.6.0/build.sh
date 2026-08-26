@@ -66,6 +66,7 @@ const pup = JSON.parse(fs.readFileSync('packages/puppeteer/package.json', 'utf8'
 pup.name = '@ohos-ports/puppeteer';
 pup.version = '25.6.0-beta.0';
 pup.description = 'Puppeteer HarmonyOS adaptation';
+pup.repository = { type: 'git', url: 'git+https://github.com/ohos-ports/ohos-ports.git', directory: 'ports/puppeteer/25.6.0' };
 delete pup.scripts.postinstall;
 pup.dependencies['@ohos-ports/puppeteer-browsers'] = '3.2.0-beta.0';
 delete pup.dependencies['@puppeteer/browsers'];
@@ -78,6 +79,7 @@ console.log('  ✓ puppeteer/package.json (25.6.0-beta.0)');
 const core = JSON.parse(fs.readFileSync('packages/puppeteer-core/package.json', 'utf8'));
 core.name = '@ohos-ports/puppeteer-core';
 core.version = '25.6.0-beta.0';
+core.repository = { type: 'git', url: 'git+https://github.com/ohos-ports/ohos-ports.git', directory: 'ports/puppeteer/25.6.0' };
 if (core.dependencies && core.dependencies['@puppeteer/browsers']) {
   core.dependencies['@ohos-ports/puppeteer-browsers'] = '3.2.0-beta.0';
   delete core.dependencies['@puppeteer/browsers'];
@@ -88,6 +90,7 @@ console.log('  ✓ puppeteer-core/package.json (25.6.0-beta.0)');
 // browsers/package.json
 const browsers = JSON.parse(fs.readFileSync('packages/browsers/package.json', 'utf8'));
 browsers.version = '3.2.0-beta.0';
+browsers.repository = { type: 'git', url: 'git+https://github.com/ohos-ports/ohos-ports.git', directory: 'ports/puppeteer/25.6.0' };
 fs.writeFileSync('packages/browsers/package.json', JSON.stringify(browsers, null, 2) + '\n');
 console.log('  ✓ browsers/package.json (3.2.0-beta.0)');
 "
