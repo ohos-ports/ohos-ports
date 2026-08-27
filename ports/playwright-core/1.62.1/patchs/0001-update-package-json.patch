@@ -1,0 +1,29 @@
+diff --git a/packages/playwright-core/package.json b/packages/playwright-core/package.json
+index 4a3da3b..88ab57d 100644
+--- a/packages/playwright-core/package.json
++++ b/packages/playwright-core/package.json
+@@ -1,12 +1,13 @@
+ {
+   "name": "playwright-core",
+   "version": "1.62.1",
+-  "description": "A high-level API to automate web browsers",
++  "description": "A high-level API to automate web browsers — OpenHarmony (OHOS) port of playwright-core, built from the upstream source with the HarmonyOS device browser support.",
+   "repository": {
+     "type": "git",
+-    "url": "git+https://github.com/microsoft/playwright.git"
++    "url": "git+https://github.com/ohos-ports/ohos-ports.git",
++    "directory": "ports/playwright-core/1.62.1"
+   },
+-  "homepage": "https://playwright.dev",
++  "homepage": "https://ohos-ports.github.io/ohos-ports/",
+   "engines": {
+     "node": ">=20"
+   },
+@@ -25,6 +26,7 @@
+     "./lib/bootstrap": "./lib/bootstrap.js",
+     "./lib/coreBundle": "./lib/coreBundle.js",
+     "./lib/utilsBundle": "./lib/utilsBundle.js",
++    "./lib/ohos": "./lib/ohos/index.js",
+     "./lib/tools/cli-client/program": "./lib/tools/cli-client/program.js"
+   },
+   "bin": {
