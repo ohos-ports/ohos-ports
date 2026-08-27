@@ -1,0 +1,9 @@
+--- a/src/browser.ts
++++ b/src/browser.ts
+@@ -167,7 +167,7 @@ export function detectDisplay(): void {
+   // Only detect display on Linux/UNIX.
+-  if (os.platform() === 'win32' || os.platform() === 'darwin') {
++  if (os.platform() === 'win32' || os.platform() === 'darwin' || os.platform() === 'openharmony') {
+     return;
+   }
+   if (!process.env['DISPLAY']) {
