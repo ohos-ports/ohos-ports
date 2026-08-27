@@ -34,7 +34,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes, skipping commit"
           else
-            git commit -m "auto: update @ohos-ports package list [skip ci]"
+            git commit -m "auto: update @ohos-ports package list"
             git pull --rebase origin main
             git push
           fi
