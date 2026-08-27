@@ -19,6 +19,7 @@ ohos-ports 致力于将 npm 生态中的三方库移植到 OpenHarmony（以下�
 | @ohos-ports/better-sqlite3 | 13.0.3 | `npm i @ohos-ports/better-sqlite3` |
 | @ohos-ports/bufferutil | 4.1.0-2 | `npm i @ohos-ports/bufferutil` |
 | @ohos-ports/bun-pty | 0.4.10-1 | `npm i @ohos-ports/bun-pty` |
+| @ohos-ports/chrome-devtools-mcp | 1.7.0-beta.1 | `npm i @ohos-ports/chrome-devtools-mcp` |
 | @ohos-ports/lightningcss | 1.33.0-1 | `npm i @ohos-ports/lightningcss` |
 | @ohos-ports/mermaid-cli | 11.16.0 | `npm i @ohos-ports/mermaid-cli` |
 | @ohos-ports/opentui-core | 0.5.3 | `npm i @ohos-ports/opentui-core` |
