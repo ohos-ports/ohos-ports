@@ -1,0 +1,24 @@
+--- a/package.json
++++ b/package.json
+@@ -1,8 +1,8 @@
+ {
+-  "name": "lighthouse",
++  "name": "@ohos-ports/lighthouse",
+   "type": "module",
+-  "version": "13.4.1",
+-  "description": "Automated auditing, performance metrics, and best practices for the web.",
++  "version": "13.4.1-beta.3",
++  "description": "Automated auditing, performance metrics, and best practices for the web. — OpenHarmony (OHOS) port.",
+   "main": "./core/index.js",
+   "bin": {
+     "lighthouse": "cli/index.js",
+@@ -212,7 +212,8 @@
+   },
+   "repository": {
+     "type": "git",
+-    "url": "git+https://github.com/GoogleChrome/lighthouse.git"
++    "url": "https://github.com/ohos-ports/ohos-ports.git",
++    "directory": "ports/lighthouse/13.4.1"
+   },
+   "keywords": [
+     "google",
