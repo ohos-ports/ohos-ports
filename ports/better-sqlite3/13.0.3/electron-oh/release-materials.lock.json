@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "packageVersion": "13.0.3-electron-oh.0",
+  "documents": [
+    {
+      "file": "licenses/Node-v22.17.0-LICENSE.txt",
+      "sha256": "1ae62e2015784ba438db7b04ebd33f3c4ff3efdb824c111c4ececd99945fd52d",
+      "source": "https://raw.githubusercontent.com/nodejs/node/v22.17.0/LICENSE"
+    },
+    {
+      "file": "licenses/node-addon-api-8.9.2-LICENSE.txt",
+      "sha256": "89024017b88a9f2b763f79b941a4f2db3b4428edfcacdc0b23866b2da633ad0c",
+      "source": "https://raw.githubusercontent.com/nodejs/node-addon-api/v8.9.2/LICENSE.md"
+    },
+    {
+      "file": "licenses/OHOS-NDK-6.0.2.130-LLVM-NOTICE.txt",
+      "sha256": "0c3e828f1d91ce25fee65845c657050abb50fa23309124e60e02f14adc4f2863",
+      "source": "OHOS Native SDK 6.0.2.130 / llvm/NOTICE"
+    },
+    {
+      "file": "licenses/OHOS-NDK-6.0.2.130-NATIVE-NOTICE.txt",
+      "sha256": "b28cdd10e2600e0fc28f9d7ae4f6c6c2ad71671b2d5cb0c4973ff47299345a21",
+      "source": "OHOS Native SDK 6.0.2.130 / NOTICE.txt"
+    }
+  ],
+  "existingMaterials": {
+    "better-sqlite3": "Keep the baseline package LICENSE byte-identical.",
+    "SQLite": "Keep the public-domain dedication in deps/sqlite3/sqlite3.c."
+  },
+  "shimAuthorization": {
+    "status": "pending-upstream-evidence",
+    "shimSha256": "6c8b3134b858c505b1741fd182f921dd092774558addabc8848d71287edf5d52",
+    "runtimeArchiveSha256": "57bf0314ce3f5be80fc7a7ebc4f47a2fe82a5e4afcf5fe856ad9cfc342618946",
+    "required": "Upstream LICENSE/NOTICE or public authorization explicitly covering this libshim.a and static redistribution; then vendor the text, lock its hash, and record a review URL.",
+    "reviewUrl": null
+  },
+  "signatureDecision": {
+    "status": "proposed",
+    "mode": "hap-consumer-signing",
+    "standaloneSelfSignForPublicDistribution": false,
+    "reviewUrl": null,
+    "reference": "https://developer.huawei.com/consumer/cn/doc/harmonyos-guides/binary-sign-tool"
+  },
+  "requiredRuntimeEvidence": [
+    "node",
+    "electronOhHap"
+  ],
+  "nodeBaselineSha256": "bcd5acef74f8077ba2d803b6297885668088eaa0cb9dc618a2b2a48ffd8aa83c",
+  "sdkInputs": {
+    "version": "6.0.2.130",
+    "apiVersion": "22",
+    "sha256": {
+      "NOTICE.txt": "b28cdd10e2600e0fc28f9d7ae4f6c6c2ad71671b2d5cb0c4973ff47299345a21",
+      "llvm/NOTICE": "0c3e828f1d91ce25fee65845c657050abb50fa23309124e60e02f14adc4f2863",
+      "llvm/lib/aarch64-linux-ohos/libc++.a": "52e59afca841c33337dc4b95d3bde412961cda1ea19aeaf6ac7d4a2b84f6f78d",
+      "llvm/lib/aarch64-linux-ohos/libc++abi.a": "b4a943112d5aab6c4a60ab66bcd5b77c3fad1263f124ea81a23ef42ea2209f18",
+      "llvm/lib/aarch64-linux-ohos/libunwind.a": "c08080244db6ac4eadc6928a064135fa4c70d4ebca06aae14cba2dbd946915ce",
+      "llvm/lib/clang/15.0.4/lib/aarch64-linux-ohos/libclang_rt.builtins.a": "c6e0df2d9699fe4fb7a27ff1684e1ea0a72f705f1099034ac9e46511c48643e8",
+      "llvm/lib/clang/15.0.4/lib/aarch64-linux-ohos/clang_rt.crtbegin.o": "a63fa52ba3b20f0bfd6490d9396ed2ba54826c47c02fb20a038872ce756bd8b7",
+      "llvm/lib/clang/15.0.4/lib/aarch64-linux-ohos/clang_rt.crtend.o": "2fa6e82b9538208023fc90f58933af1e7363f20e1e44653ae99631d7123bc698",
+      "sysroot/usr/lib/aarch64-linux-ohos/crti.o": "289809e5b2cc5cb381581afd7cbf1925a6679e790914d97b717da884dfb9f591",
+      "sysroot/usr/lib/aarch64-linux-ohos/crtn.o": "100f69354fafe0db1b8f4137a899f40d5c5e025a2bd990b45cfb4be2e8cacbd0"
+    }
+  }
+}

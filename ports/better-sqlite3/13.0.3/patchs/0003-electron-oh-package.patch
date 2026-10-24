@@ -1,0 +1,25 @@
+From: ohos-ports contributors
+Subject: [PATCH] package: add opt-in Electron-OH pilot metadata
+
+Base: better-sqlite3 v13.0.3, after patches 0001 and 0002.
+The default JS entrypoint, loader, dependencies and Node prebuild are unchanged.
+README.electron-oh.md is copied by electron-oh/build-electron-oh.sh. prebuilds/** already
+includes the new Electron-OH binary and its manifest.
+
+--- a/package.json
++++ b/package.json
+@@ -1,6 +1,6 @@
+ {
+   "name": "@ohos-ports/better-sqlite3",
+-  "version": "13.0.3",
++  "version": "13.0.3-electron-oh.0",
+   "description": "The fastest and simplest library for SQLite in Node.js. — OpenHarmony (OHOS) port.",
+   "homepage": "http://github.com/WiseLibs/better-sqlite3",
+   "author": "Joshua Wise <joshuathomaswise@gmail.com>",
+@@ -35,5 +35,6 @@
+     "lib/**",
+     "deps/**",
++    "README.electron-oh.md",
+     "prebuilds/**"
+   ],
+   "gypfile": false,

@@ -1,0 +1,11 @@
+{
+  "candidateSha256": "REPLACE_WITH_FINAL_TARBALL_SHA256",
+  "electronBinarySha256": "REPLACE_WITH_MANIFEST_BINARY_SHA256",
+  "baselineSha256": "bcd5acef74f8077ba2d803b6297885668088eaa0cb9dc618a2b2a48ffd8aa83c",
+  "runtimeResults": {
+    "node": {"status": "not-run", "reportUrl": null},
+    "electronOhHap": {"status": "not-run", "reportUrl": null}
+  },
+  "hapSigning": {"codeSignVerified": false, "hapSha256": null, "reportUrl": null},
+  "maintainerReviewUrl": null
+}
