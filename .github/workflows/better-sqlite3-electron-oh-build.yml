@@ -1,0 +1,37 @@
+name: better-sqlite3 Electron-OH build only
+# Manual trusted-ref execution only: never run unreviewed PR code on this runner.
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: better-sqlite3-electron-oh-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  cross-build:
+    runs-on: [self-hosted, electron-oh]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check provisioned SDK and pinned dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          : "${OHOS_NDK:?Configure the OHOS native SDK root on this runner}"
+          : "${ELECTRON_OH_SHIM:?Import the pinned official shim on this runner}"
+          : "${ELECTRON_OH_RUNTIME_LIBRARY:?Configure the pinned libelectron.so}"
+          python3 --version
+          node --version
+          npm --version
+      - name: Build and compare actual npm tarballs
+        shell: bash
+        working-directory: ports/better-sqlite3/13.0.3/electron-oh
+        run: |
+          set -euo pipefail
+          python3 tools/ci-build-electron-oh.py \
+            --work-dir "$RUNNER_TEMP/better-sqlite3-electron-oh-${{ github.run_id }}-${{ github.run_attempt }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: better-sqlite3-electron-oh-unsigned-validation-only
+          path: ${{ runner.temp }}/better-sqlite3-electron-oh-${{ github.run_id }}-${{ github.run_attempt }}/artifacts/
+          if-no-files-found: error

@@ -1,0 +1,42 @@
+name: better-sqlite3 Electron-OH source checks
+on:
+  pull_request:
+    paths:
+      - 'ports/better-sqlite3/13.0.3/**'
+      - '.github/workflows/better-sqlite3-electron-oh-*.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check scripts and package patch
+        working-directory: ports/better-sqlite3/13.0.3/electron-oh
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n build-electron-oh.sh
+          sh -n ../publish.sh
+          python3 -m compileall -q tools tests
+          python3 tools/check-release.py --check-materials
+          python3 tests/test-publication.py
+          for file in tests/*.cjs examples/*.cjs; do node --check "$file"; done
+          python3 - <<'PY'
+          import hashlib, tarfile, urllib.request
+          from pathlib import Path
+          url = 'https://registry.npmjs.org/@ohos-ports/better-sqlite3/-/better-sqlite3-13.0.3.tgz'
+          data = urllib.request.urlopen(url, timeout=60).read()
+          assert hashlib.sha256(data).hexdigest() == 'bcd5acef74f8077ba2d803b6297885668088eaa0cb9dc618a2b2a48ffd8aa83c'
+          Path('baseline.tgz').write_bytes(data)
+          with tarfile.open('baseline.tgz') as archive:
+              archive.extractall('baseline', filter='data')
+          PY
+          patch --dry-run --batch -d baseline/package -p1 -i "$PWD/../patchs/0003-electron-oh-package.patch"

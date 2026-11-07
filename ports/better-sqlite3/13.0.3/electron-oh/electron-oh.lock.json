@@ -1,0 +1,18 @@
+{
+  "upstreamVersion": "13.0.3",
+  "packageVersion": "13.0.3-electron-oh.0",
+  "electronOhVersion": "37.2.0",
+  "nodeVersion": "22.17.0",
+  "napiVersion": 10,
+  "nodeAddonApiVersion": "8.9.2",
+  "shimSha256": "6c8b3134b858c505b1741fd182f921dd092774558addabc8848d71287edf5d52",
+  "runtimeLibrarySha256": "8f865ffdd4eacea87da938f1676ffbb653fc1746120bbb43e06bb46b40576541",
+  "sourceSha256": "a4e60388817ad4ff15c89fe2b10a374d6dc15cbcd3aa863f117cd7196f6d86a9",
+  "runtimeSource": {
+    "url": "https://gitcode.com/CPF-Electron/Electron/releases/download/v37.2.0/v37.2.0-openharmony-arm64.zip",
+    "archiveSha256": "57bf0314ce3f5be80fc7a7ebc4f47a2fe82a5e4afcf5fe856ad9cfc342618946",
+    "shimArchiveSuffix": "docs/electron-napi-library.zip",
+    "shimArchiveSha256": "837d41353aab2b0cc30f56a8f55064db0c7aea73ee7fd47389740639c7b581fc",
+    "access": "Upstream may require authentication; import a verified local archive when anonymous download is denied."
+  }
+}
