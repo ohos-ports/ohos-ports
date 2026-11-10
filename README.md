@@ -16,7 +16,7 @@ ohos-ports 致力于将 npm 生态中的三方库移植到 OpenHarmony（以下�
 <!-- PORTS_TABLE_START -->
 | 包名 | 版本 | 安装 |
 |------|------|------|
-| @ohos-ports/better-sqlite3 | 13.0.3 | `npm i @ohos-ports/better-sqlite3` |
+| @ohos-ports/better-sqlite3 | 12.11.2-beta.1 | `npm i @ohos-ports/better-sqlite3` |
 | @ohos-ports/bufferutil | 4.1.0-2 | `npm i @ohos-ports/bufferutil` |
 | @ohos-ports/bun-pty | 0.4.10-2 | `npm i @ohos-ports/bun-pty` |
 | @ohos-ports/chrome-devtools-mcp | 1.7.0-beta.1 | `npm i @ohos-ports/chrome-devtools-mcp` |
@@ -26,7 +26,7 @@ ohos-ports 致力于将 npm 生态中的三方库移植到 OpenHarmony（以下�
 | @ohos-ports/oxlint-tsgolint | 7.0.2001-beta.0 | `npm i @ohos-ports/oxlint-tsgolint` |
 | @ohos-ports/pprof | 5.0.0-beta.2 | `npm i @ohos-ports/pprof` |
 | @ohos-ports/puppeteer | 25.6.0-beta.0 | `npm i @ohos-ports/puppeteer` |
-| @ohos-ports/resvg-js | 2.6.2 | `npm i @ohos-ports/resvg-js` |
+| @ohos-ports/resvg-js | 2.6.2-beta.1 | `npm i @ohos-ports/resvg-js` |
 | @ohos-ports/tailwindcss-oxide | 4.3.3-beta.1 | `npm i @ohos-ports/tailwindcss-oxide` |
 <!-- PORTS_TABLE_END -->
 
