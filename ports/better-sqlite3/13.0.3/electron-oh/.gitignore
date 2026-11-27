@@ -1,0 +1,4 @@
+/build-workspace/
+/baseline/
+/*.tgz
+**/__pycache__/
