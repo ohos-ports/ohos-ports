@@ -1,0 +1,149 @@
+diff --git a/packages/playwright-core/src/server/browser.ts b/packages/playwright-core/src/server/browser.ts
+index 56fff64..f78c6c3 100644
+--- a/packages/playwright-core/src/server/browser.ts
++++ b/packages/playwright-core/src/server/browser.ts
+@@ -36,6 +36,7 @@ import type * as channels from './channels';
+ import type { ChildProcess } from 'child_process';
+ import type { Language } from '@isomorphic/locatorGenerators';
+ import type { Progress } from './progress';
++import type { HdcBackend } from '../ohos/hdc';
+ import type * as playwright from '../..';
+ 
+ export interface BrowserProcess {
+@@ -65,6 +66,11 @@ export type BrowserOptions = {
+   originalLaunchOptions: types.LaunchOptions;
+   userDataDir?: string;
+   noDefaults?: boolean;
++  // HarmonyOS-only launch flags produced by the HDC launcher; present only
++  // for browsers connected to a device.
++  __ohosHdcBackend?: HdcBackend;
++  __ohosArkWeb?: boolean;
++  __ohosNoDefaultContext?: boolean;
+ };
+ 
+ export abstract class Browser extends SdkObject {
+@@ -81,6 +87,10 @@ export abstract class Browser extends SdkObject {
+   private _contextForReuse: { context: BrowserContext, hash: string } | undefined;
+   _closeReason: string | undefined;
+   _isBrowserCollocatedWithServer: boolean = true;
++  // HarmonyOS launcher state. Present only for browsers launched through
++  // HDC; the ArkWeb flag identifies the huawei browser bundle.
++  _hdcBackend?: HdcBackend;
++  _isArkWeb: boolean = false;
+   private _server: BrowserServer;
+ 
+   constructor(parent: SdkObject, options: BrowserOptions) {
+diff --git a/packages/playwright-core/src/server/registry/index.ts b/packages/playwright-core/src/server/registry/index.ts
+index 2b6e014..e906ec1 100644
+--- a/packages/playwright-core/src/server/registry/index.ts
++++ b/packages/playwright-core/src/server/registry/index.ts
+@@ -15,6 +15,7 @@
+  * limitations under the License.
+  */
+ 
++import { execFileSync } from 'child_process';
+ import fs from 'fs';
+ import os from 'os';
+ import path from 'path';
+@@ -34,6 +35,7 @@ import { getEmbedderName } from '../userAgent';
+ import { installDependenciesLinux, installDependenciesWindows, validateDependenciesLinux, validateDependenciesWindows } from './dependencies';
+ import { dockerVersion, readDockerVersionSync, transformCommandsForRoot } from './dependencies';
+ import { downloadBrowserWithProgressBar, logPolitely } from './browserFetcher';
++import { isOpenHarmony } from '../../ohos/utils';
+ import { packageRoot, binPath } from '../../package';
+ 
+ import type { DependencyGroup } from './dependencies';
+@@ -498,6 +500,8 @@ const DOWNLOAD_PATHS: Record<string, DownloadPaths> = {
+ export const defaultCacheDirectory = (() => {
+   if (process.platform === 'linux')
+     return process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache');
++  if (isOpenHarmony())
++    return process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache');
+   if (process.platform === 'darwin')
+     return path.join(os.homedir(), 'Library', 'Caches');
+   if (process.platform === 'win32')
+@@ -505,6 +509,31 @@ export const defaultCacheDirectory = (() => {
+   throw new Error('Unsupported platform: ' + process.platform);
+ })();
+ 
++// Playwright ships no ffmpeg for the openharmony platform; resolve the
++// system ffmpeg instead of the downloaded one.
++const findSystemFfmpeg = (): string | undefined => {
++  const candidates: string[] = [];
++  try {
++    const out = execFileSync('sh', ['-c', 'command -v ffmpeg 2>/dev/null || true'], { encoding: 'utf8', timeout: 8000 }).trim();
++    const first = out.split('\n')[0].trim();
++    if (first)
++      candidates.push(first);
++  } catch {
++  }
++  try {
++    candidates.push(path.join(os.homedir(), '.harmonybrew', 'bin', 'ffmpeg'));
++  } catch {
++  }
++  for (const candidate of candidates) {
++    try {
++      if (fs.existsSync(candidate))
++        return candidate;
++    } catch {
++    }
++  }
++  return undefined;
++};
++
+ export const defaultRegistryDirectory = path.join(defaultCacheDirectory, 'ms-playwright');
+ 
+ export const registryDirectory = (() => {
+@@ -930,7 +959,9 @@ export class Registry {
+     });
+ 
+     const ffmpeg = descriptors.find(d => d.name === 'ffmpeg')!;
+-    const ffmpegExecutable = findExecutablePath(ffmpeg.dir, 'ffmpeg');
++    // Playwright ships no ffmpeg for the openharmony platform, so the
++    // executable resolves to the system ffmpeg instead of the downloaded one.
++    const ffmpegExecutable = isOpenHarmony() ? findSystemFfmpeg() : findExecutablePath(ffmpeg.dir, 'ffmpeg');
+     this._executables.push({
+       name: 'ffmpeg',
+       browserName: undefined,
+diff --git a/packages/playwright-core/src/serverRegistry.ts b/packages/playwright-core/src/serverRegistry.ts
+index 3f5ddb0..33b215d 100644
+--- a/packages/playwright-core/src/serverRegistry.ts
++++ b/packages/playwright-core/src/serverRegistry.ts
+@@ -22,6 +22,7 @@ import os from 'os';
+ import chokidar from 'chokidar';
+ 
+ import { packageJSON, packageRoot } from './package';
++import { isOpenHarmony } from './ohos/utils';
+ 
+ // Only client depenencies with backward compatibility guarantees should be imported here.
+ import type { LaunchOptions } from '../types/types';
+@@ -245,6 +246,8 @@ async function canConnectTo(descriptor: BrowserDescriptor): Promise<boolean> {
+ const defaultCacheDirectory = (() => {
+   if (process.platform === 'linux')
+     return process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache');
++  if (isOpenHarmony())
++    return process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache');
+   if (process.platform === 'darwin')
+     return path.join(os.homedir(), 'Library', 'Caches');
+   if (process.platform === 'win32')
+diff --git a/packages/playwright-core/src/tools/cli-client/registry.ts b/packages/playwright-core/src/tools/cli-client/registry.ts
+index 76de68c..908253f 100644
+--- a/packages/playwright-core/src/tools/cli-client/registry.ts
++++ b/packages/playwright-core/src/tools/cli-client/registry.ts
+@@ -20,6 +20,7 @@ import os from 'os';
+ import path from 'path';
+ 
+ import { packageRoot, packageJSON } from '../../package';
++import { isOpenHarmony } from '../../ohos/utils';
+ 
+ import type * as playwright from '../../..';
+ 
+@@ -149,6 +150,8 @@ export const baseDaemonDir = (() => {
+   let localCacheDir: string | undefined;
+   if (process.platform === 'linux')
+     localCacheDir = process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache');
++  if (isOpenHarmony())
++    localCacheDir = process.env.XDG_CACHE_HOME || path.join(os.homedir(), '.cache');
+   if (process.platform === 'darwin')
+     localCacheDir = path.join(os.homedir(), 'Library', 'Caches');
+   if (process.platform === 'win32')

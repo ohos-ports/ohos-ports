@@ -1,0 +1,5 @@
+# Downloaded upstream source and build artifacts
+playwright-*.zip
+playwright-*/
+playwright-core-*/
+.smoke/

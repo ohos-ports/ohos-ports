@@ -1,0 +1,217 @@
+diff --git a/packages/playwright-core/src/server/chromium/crPage.ts b/packages/playwright-core/src/server/chromium/crPage.ts
+index b462b0b..9cef97f 100644
+--- a/packages/playwright-core/src/server/chromium/crPage.ts
++++ b/packages/playwright-core/src/server/chromium/crPage.ts
+@@ -37,6 +37,7 @@ import { TargetClosedError } from '../errors';
+ import { isSessionClosedError } from '../protocolError';
+ import { startAutomaticVideoRecording } from '../videoRecorder';
+ import { nullProgress } from '../progress';
++import { hdcScreenshot } from '../../ohos/hdc';
+ 
+ import type { CRSession } from './crConnection';
+ import type { Protocol } from './protocol';
+@@ -203,20 +204,36 @@ export class CRPage implements PageDelegate {
+     await this._mainFrameSession._client.send('Page.reload');
+   }
+ 
+-  private async _go(delta: number): Promise<boolean> {
++  private async _go(delta: number): Promise<boolean | string> {
+     const history = await this._mainFrameSession._client.send('Page.getNavigationHistory');
+     const entry = history.entries[history.currentIndex + delta];
+     if (!entry)
+       return false;
+     await this._mainFrameSession._client.send('Page.navigateToHistoryEntry', { entryId: entry.id });
++    // The device browsers report no CDP events for history navigations;
++    // wait until the URL actually changes so goBack/goForward complete, and
++    // report the URL so the caller can skip the event-based wait.
++    if (this._page.browserContext._browser._hdcBackend) {
++      const deadline = Date.now() + 30000;
++      while (Date.now() < deadline) {
++        await new Promise(resolve => setTimeout(resolve, 200));
++        const { result } = await this._mainFrameSession._client.send('Runtime.evaluate', {
++          expression: 'location.href',
++          returnByValue: true,
++        });
++        if (result?.value === entry.url)
++          break;
++      }
++      return entry.url;
++    }
+     return true;
+   }
+ 
+-  goBack(): Promise<boolean> {
++  goBack(): Promise<boolean | string> {
+     return this._go(-1);
+   }
+ 
+-  goForward(): Promise<boolean> {
++  goForward(): Promise<boolean | string> {
+     return this._go(+1);
+   }
+ 
+@@ -268,8 +285,17 @@ export class CRPage implements PageDelegate {
+       const deviceScaleFactor =  this._mainFrameSession._metricsOverride?.deviceScaleFactor || contentSize.width / cssContentSize.width || 1;
+       clip.scale /= deviceScaleFactor;
+     }
+-    const result = await progress.race(this._mainFrameSession._client.send('Page.captureScreenshot', { format, quality, clip, captureBeyondViewport: !fitsViewport }));
+-    return Buffer.from(result.data, 'base64');
++    try {
++      const result = await progress.race(this._mainFrameSession._client.send('Page.captureScreenshot', { format, quality, clip, captureBeyondViewport: !fitsViewport }));
++      return Buffer.from(result.data, 'base64');
++    } catch (error) {
++      // The native CDP screenshot is used when it works; only a failure
++      // falls back to the HDC display capture (png only).
++      const hdcBackend = this._browserContext._browser._hdcBackend;
++      if (!hdcBackend || format !== 'png')
++        throw error;
++      return await progress.race(hdcScreenshot(hdcBackend));
++    }
+   }
+ 
+   async getContentFrame(handle: dom.ElementHandle): Promise<frames.Frame | null> {
+@@ -892,11 +918,16 @@ class FrameSession {
+ 
+   _onScreencastFrame(payload: Protocol.Page.screencastFramePayload) {
+     const buffer = Buffer.from(payload.data, 'base64');
++    // ArkWeb reports the physical device size (as a float) instead of the
++    // emulated viewport in the screencast frame metadata; report the last
++    // emulated viewport like desktop Chrome, falling back to the rounded
++    // device size when no viewport was ever applied.
++    const hdcBackend = this._page.browserContext._browser._hdcBackend;
+     void this._page.screencast.onScreencastFrame({
+       buffer,
+       frameSwapWallTime: payload.metadata.timestamp ? payload.metadata.timestamp * 1000 : Date.now(),
+-      viewportWidth: payload.metadata.deviceWidth,
+-      viewportHeight: payload.metadata.deviceHeight,
++      viewportWidth: hdcBackend ? (this._metricsOverride?.width ?? Math.round(payload.metadata.deviceWidth)) : payload.metadata.deviceWidth,
++      viewportHeight: hdcBackend ? (this._metricsOverride?.height ?? Math.round(payload.metadata.deviceHeight)) : payload.metadata.deviceHeight,
+     }).then(() => {
+       this._client._sendMayFail('Page.screencastFrameAck', { sessionId: payload.sessionId });
+     });
+@@ -1080,6 +1111,16 @@ class FrameSession {
+     const position = await this._framePosition();
+     if (!position)
+       return null;
++    // Round bounding boxes reported by the device to fix sub-pixel
++    // precision differences.
++    if (this._page.browserContext._browser._hdcBackend) {
++      return {
++        x: Math.round(x + position.x),
++        y: Math.round(y + position.y),
++        width: Math.round(width),
++        height: Math.round(height),
++      };
++    }
+     return { x: x + position.x, y: y + position.y, width, height };
+   }
+ 
+diff --git a/packages/playwright-core/src/server/page.ts b/packages/playwright-core/src/server/page.ts
+index 0baec6b..e9164df 100644
+--- a/packages/playwright-core/src/server/page.ts
++++ b/packages/playwright-core/src/server/page.ts
+@@ -41,6 +41,7 @@ import { Overlay } from './overlay';
+ import { NonRecoverableDOMError } from './dom';
+ import { Screencast } from './screencast';
+ import { saveGlobalsSnapshotSource } from './javascript';
++import { ohosInitScript } from '../ohos/launcher';
+ 
+ import type { Artifact } from './artifact';
+ import type { BrowserContextEventMap } from './browserContext';
+@@ -60,8 +61,10 @@ export interface PageDelegate {
+   readonly rawTouchscreen: input.RawTouchscreen;
+ 
+   reload(): Promise<void>;
+-  goBack(): Promise<boolean>;
+-  goForward(): Promise<boolean>;
++  // goBack/goForward resolve to the navigated URL on HarmonyOS device
++  // browsers (which report no navigation events), and to a boolean otherwise.
++  goBack(): Promise<boolean | string>;
++  goForward(): Promise<boolean | string>;
+   requestGC(): Promise<void>;
+   addInitScript(initScript: InitScript): Promise<void>;
+   removeInitScripts(initScripts: InitScript[]): Promise<void>;
+@@ -163,6 +166,37 @@ export type PageError = {
+   location: types.ConsoleMessageLocation,
+ };
+ 
++// The device browsers fire no navigation events for history navigations, so
++// goBack/goForward cannot wait for one. A synthetic response object is
++// returned instead; the dispatcher only reads the fields below eagerly.
++function ohosHistoryResponse(mainFrame: frames.Frame, url: string): network.Response {
++  const response = {
++    guid: 'ohos-history-response-' + Date.now() + '-' + Math.random(),
++    url: () => url,
++    status: () => 200,
++    statusText: () => '',
++    headers: () => [],
++    timing: () => ({ startTime: 0, domainLookupStart: -1, domainLookupEnd: -1, connectStart: -1, secureConnectionStart: -1, connectEnd: -1, requestStart: 0, responseStart: 0 }),
++    fromServiceWorker: () => false,
++    request: () => ({
++      guid: 'ohos-history-request-' + Date.now() + '-' + Math.random(),
++      url: () => url,
++      method: () => 'GET',
++      postDataBuffer: () => null,
++      headers: () => [],
++      resourceType: () => 'document',
++      isNavigationRequest: () => true,
++      _existingResponse: () => null,
++      redirectedFrom: () => null,
++      serviceWorker: () => null,
++      frame: () => mainFrame,
++      timing: () => ({ startTime: 0, domainLookupStart: -1, domainLookupEnd: -1, connectStart: -1, secureConnectionStart: -1, connectEnd: -1, requestStart: 0, responseStart: 0 }),
++      sizes: () => ({ requestBodySize: 0, responseBodySize: 0, transferSize: 0 }),
++    }),
++  };
++  return response as unknown as network.Response;
++}
++
+ export class Page extends SdkObject<PageEventMap> {
+   static Events = PageEvent;
+ 
+@@ -475,6 +509,15 @@ export class Page extends SdkObject<PageEventMap> {
+ 
+   async goBack(progress: Progress, options: types.NavigateOptions): Promise<network.Response | null> {
+     return this.mainFrame().raceNavigationAction(progress, async () => {
++      // The device browsers fire no navigation events, so the event-based
++      // wait (which they never satisfy) is skipped; _go already waited for
++      // the URL change and reports it.
++      if (this.browserContext._browser._hdcBackend) {
++        const url = await progress.race(this.delegate.goBack()) as string;
++        if (!url)
++          return null;
++        return ohosHistoryResponse(this.mainFrame(), url);
++      }
+       // Note: waitForNavigation may fail before we get response to goBack,
+       // so we should catch it immediately.
+       let error: Error | undefined;
+@@ -496,6 +539,15 @@ export class Page extends SdkObject<PageEventMap> {
+ 
+   async goForward(progress: Progress, options: types.NavigateOptions): Promise<network.Response | null> {
+     return this.mainFrame().raceNavigationAction(progress, async () => {
++      // The device browsers fire no navigation events, so the event-based
++      // wait (which they never satisfy) is skipped; _go already waited for
++      // the URL change and reports it.
++      if (this.browserContext._browser._hdcBackend) {
++        const url = await progress.race(this.delegate.goForward()) as string;
++        if (!url)
++          return null;
++        return ohosHistoryResponse(this.mainFrame(), url);
++      }
+       // Note: waitForNavigation may fail before we get response to goForward,
+       // so we should catch it immediately.
+       let error: Error | undefined;
+@@ -916,7 +968,12 @@ export class Page extends SdkObject<PageEventMap> {
+     const bindings = [...this.browserContext._pageBindings.values(), ...this._pageBindings.values()].map(binding => binding.initScript);
+     if (this.browserContext.bindingsInitScript)
+       bindings.unshift(this.browserContext.bindingsInitScript);
+-    return [...bindings, ...this.browserContext.initScripts, ...this.initScripts];
++    const scripts = [...bindings, ...this.browserContext.initScripts, ...this.initScripts];
++    // Inject the HarmonyOS init script into every page of HDC-launched
++    // browsers (navigator.webdriver and rounded touch coordinates).
++    if (this.browserContext._browser._hdcBackend)
++      scripts.push(new InitScript(this.browserContext, ohosInitScript));
++    return scripts;
+   }
+ 
+   getBinding(name: string) {
