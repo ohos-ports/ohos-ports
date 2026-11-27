@@ -1,0 +1,83 @@
+--- a/cli/run.js
++++ b/cli/run.js
+@@ -69,7 +69,79 @@
+  * @param {LH.CliFlags} flags
+  * @return {Promise<ChromeLauncher.LaunchedChrome>}
+  */
+-function getDebuggableChrome(flags) {
++async function getDebuggableChrome(flags) {
++  // HarmonyOS: local browser launcher (runs directly on device)
++  if (/** @type {string} */(process.platform) === 'openharmony') {
++    const cdpPort = flags.port || 9333;
++    log.log('CLI', `Launching browser (HarmonyOS local, port=${cdpPort})`);
++
++    const {execFileSync} = await import('child_process');
++
++    // Direct invocation of local CLI tools (no hdc needed)
++    const OHOS_AA = '/system/bin/cli_tool/executable/ohos-aa';
++    const OHOS_BM = '/system/bin/cli_tool/executable/ohos-bm';
++    const execTool = (/** @type {string} */ binary, /** @type {string[]} */ args, /** @type {number} */ timeout = 30000) => {
++      try {
++        return execFileSync(binary, args, {timeout, encoding: 'utf-8', stdio: ['pipe', 'pipe', 'pipe']}).trim();
++      } catch (e) {
++        throw new Error(`${binary} ${args.join(' ')} failed: ${e.message}`);
++      }
++    };
++
++    const pkg = 'com.haitai.htbrowser';
++    const ability = 'EntryAbility';
++
++    // 1. 检查浏览器是否安装
++    try {
++      const installed = execTool(OHOS_BM, ['dump', '-a'], 10000);
++      if (!installed.includes(pkg)) {
++        throw new Error(`Browser "${pkg}" not installed. Please install Haitai browser.`);
++      }
++    } catch (e) {
++      if (e.message.includes('not installed')) throw e;
++      log.warn('CLI', 'Could not verify browser installation');
++    }
++
++    // 2. 停止旧进程
++    try { execTool(OHOS_AA, ['force-stop', '--bundlename', pkg]); } catch {}
++    await new Promise(r => setTimeout(r, 3000));
++
++    // 3. 启动浏览器 with CDP
++    const cmdArgs = `--remote-debugging-port=${cdpPort} --remote-allow-origins=http://127.0.0.1:${cdpPort} --disable-extensions --no-first-run --no-default-browser-check --disable-background-networking --disable-popup-blocking --enable-automation`;
++    log.log('CLI', `Starting browser: ohos-aa start --bundlename ${pkg} --abilityname ${ability}`);
++    execTool(OHOS_AA, ['start', '--bundlename', pkg, '--abilityname', ability, '--ps', `{"cmdArgs":${JSON.stringify(cmdArgs)}}`]);
++
++    // 6. 等待 CDP 端点
++    log.log('CLI', `Waiting for CDP on port ${cdpPort}...`);
++    const http = await import('http');
++    const start = Date.now();
++    let wsEndpoint = null;
++    while (Date.now() - start < 30000) {
++      try {
++        const data = await new Promise((resolve, reject) => {
++          const req = http.get(`http://127.0.0.1:${cdpPort}/json/version`, (res) => {
++            let d = ''; res.on('data', c => d += c); res.on('end', () => resolve(d));
++          });
++          req.on('error', reject); req.setTimeout(2000, () => { req.destroy(); reject(new Error('timeout')); });
++        });
++        const j = JSON.parse(data);
++        if (j.webSocketDebuggerUrl) { wsEndpoint = j.webSocketDebuggerUrl; break; }
++      } catch { await new Promise(r => setTimeout(r, 500)); }
++    }
++    if (!wsEndpoint) throw new Error(`CDP endpoint not available on port ${cdpPort} after 30s`);
++    log.log('CLI', `CDP ready: ${wsEndpoint}`);
++
++    // 7. 等待浏览器完全就绪
++    await new Promise(r => setTimeout(r, 3000));
++
++    return /** @type {any} */ ({
++      port: cdpPort,
++      kill: () => { try { execTool(OHOS_AA, ['force-stop', '--bundlename', pkg]); } catch {} },
++      process: { pid: 0 },
++    });
++  }
++
++  // Standard Chrome launch (non-HarmonyOS)
+   if (process.platform === 'darwin' && process.arch === 'x64') {
+     const cpus = os.cpus();
+     if (cpus[0].model.includes('Apple')) {
